@@ -16,7 +16,7 @@ spectral_lines = {}
 
 # Extract Fe ions and wavelengths from filenames
 for filename in template_files:
-    parts = filename.split("_")
+    parts = filename.replace("__", "_").split("_")
     if len(parts) >= 3:
         element = parts[0]  # Extract element name
         ion = f"{element}_{parts[1]}"  # Extract ionization state
