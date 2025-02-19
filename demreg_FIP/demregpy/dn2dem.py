@@ -181,6 +181,9 @@ def dn2dem(dn_in, edn_in, tresp, tresp_logt, temps, reg_tweak=1.0, max_iter=10, 
     for i in np.arange(nf):
         #       Ideally should be interp in log-space, so changed
         # Not as big an issue for purely AIA filters, but more of an issue for steeper X-ray ones
+        if np.any(np.isnan(truse[:, i])) or np.any(np.isinf(truse[:, i])):
+            print(f"Warning: truse[:, {i}] contains NaN or Inf values!")
+            print(f"truse[:, {i}] = {truse[:, i]}")
         tr[:, i] = 10**np.interp(logt, tresp_logt, np.log10(truse[:, i]))
 #     Previous version
 #         tr[:,i]=np.interp(logt,tresp_logt,truse[:,i])
