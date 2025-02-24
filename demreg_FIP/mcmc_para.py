@@ -145,12 +145,19 @@ def download_data(filename: str) -> None:
     print(f"Attempting to download {file_name} to {local_top}...")
 
     try:
+        # Attempt to download the file
         download_hdf5_data(file_name, local_top=local_top, overwrite=False)
+
+        # Verify if the file was successfully downloaded and is not empty
         expected_path = os.path.join(local_top, file_name)
-        if not os.path.exists(expected_path):
-            print(f"File {file_name} does not exist on the server. Skipping download.")
-        else:
-            print(f"Download completed: {file_name}")
+        if not os.path.isfile(expected_path) or os.path.getsize(expected_path) == 0:
+            print(f"File {file_name} does not exist on the server or is incomplete. Skipping download.")
+            if os.path.exists(expected_path):
+                os.remove(expected_path)  # Clean up any partial downloads
+            return
+    
+        print(f"Download completed: {file_name}")
+    
     except Exception as e:
         print(f"Error downloading {file_name}: {str(e)}. Skipping download.")
 
