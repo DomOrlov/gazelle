@@ -121,28 +121,54 @@ def download_data(filename: str) -> None:
     from eispac.download import download_hdf5_data
     import os
 
+    print(f"Starting download for: {filename}")
+
     if not filename:  # Check if filename is empty
-        raise ValueError("Filename cannot be empty")
+        print("Error: Filename cannot be empty")
+        return
 
     # Extract the local_top directory from the filename
     local_top = os.path.dirname(filename)
+    print(f"Extracted local directory: {local_top}")
 
     # If local_top is empty, use current directory
     if not local_top:
         local_top = '.'
+        print("No directory specified. Using current directory.")
 
     # Create the directory if it doesn't exist
     if not os.path.exists(local_top):
         os.makedirs(local_top)
         print(f"Created directory: {local_top}")
+    else:
+        print(f"Directory already exists: {local_top}")
 
     # Extract just the filename without the path
     file_name = os.path.basename(filename)
+    print(f"Extracted file name: {file_name}")
     
     if not file_name:  # Check if file_name is empty after basename
-        raise ValueError("Invalid filename format")
-        
+        print("Error: Invalid filename format")
+        return
+
+    # Check if the file already exists and is valid
+    local_file_path = os.path.join(local_top, file_name)
+    
+    if os.path.exists(local_file_path):
+        print(f"File already exists and will not be overwritten: {local_file_path}")
+        return
+
+    # Download the file
+    print(f"Downloading {file_name} to {local_top}...")
     download_hdf5_data(file_name, local_top=local_top, overwrite=False)
+    print(f"Download function completed for: {file_name}")
+
+    # Verify if the file exists after download
+    if not os.path.exists(local_file_path):
+        print(f"Error: File download failed: {local_file_path}")
+    else:
+        print(f"File successfully downloaded: {local_file_path}")
+
 
 def combine_dem_files(xdim:int, ydim:int, dir: str, delete=False) -> np.array:
     from glob import glob
