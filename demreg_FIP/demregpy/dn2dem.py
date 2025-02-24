@@ -181,10 +181,25 @@ def dn2dem(dn_in, edn_in, tresp, tresp_logt, temps, reg_tweak=1.0, max_iter=10, 
     for i in np.arange(nf):
         #       Ideally should be interp in log-space, so changed
         # Not as big an issue for purely AIA filters, but more of an issue for steeper X-ray ones
+        print(f"\n=== Debugging truse[:, {i}] Before Interpolation ===")
+        print(f"truse array shape: {truse.shape}")
+        print(f"truse min: {np.min(truse)}, max: {np.max(truse)}")
+        print(f"Sample truse values: {truse[:, i].flatten()[:10]}")
+
+        # Check for non-positive values
+        if np.any(truse[:, i] <= 0):
+            print(f"Non-positive values found in truse[:, {i}]")
+            print(f"truse[:, {i}] = {truse[:, i]}")
+        
+        # Check for NaN or Inf values
         if np.any(np.isnan(truse[:, i])) or np.any(np.isinf(truse[:, i])):
             print(f"Warning: truse[:, {i}] contains NaN or Inf values!")
             print(f"truse[:, {i}] = {truse[:, i]}")
         tr[:, i] = 10**np.interp(logt, tresp_logt, np.log10(truse[:, i]))
+        print(f"After interpolation - tr[:, {i}] min: {np.min(tr[:, i])}, max: {np.max(tr[:, i])}")
+        if np.any(np.isnan(tr[:, i])) or np.any(np.isinf(tr[:, i])):
+            print(f"Warning: tr[:, {i}] contains NaN or Inf values after interpolation!")
+            print(f"tr[:, {i}] = {tr[:, i]}")
 #     Previous version
 #         tr[:,i]=np.interp(logt,tresp_logt,truse[:,i])
 
