@@ -7,14 +7,14 @@ SO_EIS_data/eis_20150224_223110.data.h5 [processed]
 SO_EIS_data/eis_20140704_131127.data.h5 [processed]
 SO_EIS_data/eis_20131129_100250.data.h5 [processed]
 SO_EIS_data/eis_20140202_141952.data.h5	[processed]
-SO_EIS_data/eis_20140207_235647.data.h5 [processing]
-SO_EIS_data/eis_20140207_225933.data.h5 [processing]
-SO_EIS_data/eis_20140207_220218.data.h5 [processing]
-SO_EIS_data/eis_20140207_210504.data.h5 [processing]
-SO_EIS_data/eis_20140207_200749.data.h5 [processing]
-SO_EIS_data/eis_20140207_191035.data.h5 [processing]
-SO_EIS_data/eis_20140207_181320.data.h5 [processing]
-SO_EIS_data/eis_20140207_082249.data.h5 [processing]
+SO_EIS_data/eis_20140207_235647.data.h5
+SO_EIS_data/eis_20140207_225933.data.h5
+SO_EIS_data/eis_20140207_220218.data.h5
+SO_EIS_data/eis_20140207_210504.data.h5
+SO_EIS_data/eis_20140207_200749.data.h5
+SO_EIS_data/eis_20140207_191035.data.h5
+SO_EIS_data/eis_20140207_181320.data.h5
+SO_EIS_data/eis_20140207_082249.data.h5
 SO_EIS_data/eis_20140207_081836.data.h5
 SO_EIS_data/eis_20140207_081422.data.h5
 SO_EIS_data/eis_20140207_081009.data.h5
@@ -82,7 +82,7 @@ SO_EIS_data/eis_20140205_104127.data.h5 [processed]
 SO_EIS_data/eis_20140205_103819.data.h5
 SO_EIS_data/eis_20140205_095605.data.h5
 SO_EIS_data/eis_20140205_095151.data.h5
-SO_EIS_data/eis_20140205_094738.data.h5 [processing]
+SO_EIS_data/eis_20140205_094738.data.h5
 SO_EIS_data/eis_20140205_094325.data.h5
 SO_EIS_data/eis_20140205_093911.data.h5
 SO_EIS_data/eis_20140205_093457.data.h5
@@ -99,7 +99,7 @@ SO_EIS_data/eis_20140205_081134.data.h5
 SO_EIS_data/eis_20140205_080721.data.h5
 SO_EIS_data/eis_20140205_080307.data.h5
 SO_EIS_data/eis_20140205_075854.data.h5
-SO_EIS_data/eis_20140205_075027.data.h5 [processing]
+SO_EIS_data/eis_20140205_075027.data.h5
 SO_EIS_data/eis_20140205_074613.data.h5
 SO_EIS_data/eis_20140205_074200.data.h5
 SO_EIS_data/eis_20140205_073747.data.h5
