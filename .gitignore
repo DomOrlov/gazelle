@@ -1,0 +1,25 @@
+# Ignore configuration files if they are local or auto-generated
+demreg_FIP/config.txt
+
+# Ignore the entire results directory and its subdirectories
+demreg_FIP/results/
+
+# Ignore generated overlays and temporary images
+demreg_FIP/overlayed_images/
+demreg_FIP/v1_overlayed_images/
+demreg_FIP/v2_overlayed_images/
+
+# Ignore temporary directories or files
+demreg_FIP/tmp/
+
+# Ignore SO_EIS_data if these are raw or auto-generated files
+demreg_FIP/SO_EIS_data/
+
+# Ignore Python cache files and directories
+__pycache__/
+*.pyc
+
+# Ignore any other generated directories or files you don't need to track
+demreg_FIP/moved_results/
+demreg_FIP/old_align_aia_EIS.py
+demreg_FIP/non_aligned_files.txt

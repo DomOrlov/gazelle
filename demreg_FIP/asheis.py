@@ -13,6 +13,8 @@ from astropy.visualization import ImageNormalize, quantity_support
 from eis_calibration.eis_calib_2014 import calib_2014
 from eis_calibration.eis_calib_2023 import calib_2023
 import astropy.units as u
+from log_config import error_log
+
 
 def load_plotting_routine():
     fig = plt.figure()
@@ -190,6 +192,7 @@ class asheis:
         }
 
         if year not in calib_funcs:
+            error_log.append("Year must be either '2014' or '2023'")
             raise ValueError("Year must be either '2014' or '2023'")
 
         calib_func, calib_tag, calib_name = calib_funcs[year]
@@ -210,6 +213,7 @@ class asheis:
         date_pattern = r'\d{8}_\d{6}'  # Pattern to match dates like 20140106_163823
         date_match = re.search(date_pattern, self.filename)
         if not date_match:
+            error_log.append("Could not find date pattern in input filename")
             raise ValueError("Could not find date pattern in input filename")
         
         date = date_match.group()
@@ -222,6 +226,7 @@ class asheis:
             if plot:
                 self.plot_map(date, m, line, outdir)
             if mcmc:
+                error_log.append("warning: MCMC errors not available for pre-fitted files")
                 print("Warning: MCMC errors not available for pre-fitted files")
                 return m.data, None
             return m

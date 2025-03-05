@@ -14,6 +14,9 @@ import demregpy
 import shutil
 import os
 
+#adding error logging
+from log_config import error_log
+
 
 def check_dem_exists(filename: str) -> bool:
     # Check if the DEM file exists
@@ -122,6 +125,7 @@ def download_data(filename: str) -> None:
     import os
 
     if not filename:  # Check if filename is empty
+        error_log.append("Filename cannot be empty")
         raise ValueError("Filename cannot be empty")
 
     # Extract the local_top directory from the filename
@@ -140,6 +144,7 @@ def download_data(filename: str) -> None:
     file_name = os.path.basename(filename)
     
     if not file_name:  # Check if file_name is empty after basename
+        error_log.append("Invalid filename format")
         raise ValueError("Invalid filename format")
 
     print(f"Attempting to download {file_name} to {local_top}...")
@@ -351,6 +356,7 @@ def calc_composition(filename, np_file, line_databases, num_processes):
             plt.close()
         except Exception as e:
             print(f"Error processing {comp_ratio}: {str(e)}")
+            error_log.append(f"Error processing {comp_ratio}: {e}")
             continue
 
 
@@ -367,6 +373,7 @@ def update_filenames_txt(old_filename, new_filename):
                     file.write(line)
     except Exception as e:
             print(f"Error updating config.txt: {str(e)}")
+            error_log.append(f"Error updating config.txt: {e}")
 
 if __name__ == "__main__":
     # Determine the operating system type (Linux or macOS)
@@ -431,12 +438,21 @@ if __name__ == "__main__":
 
                 except Exception as e:
                     print(f"Error processing {filename}: {str(e)}")
+                    error_log.append(f"Error processing {filename}: {e}")
                     #If there's an error, remove the [processing] tag
                     update_filenames_txt(processing_filename, filename)
                     continue
 
     except Exception as e:
         print(f"Fatal error: {str(e)}")
+        error_log.append(f"Fatal error: {e}")
+
+# Write errors to a log file
+with open("error_log.txt", "w", encoding="utf-8") as log_file:
+    for err in error_log:
+        log_file.write(err + "\n")
+
+
 
 # how to call
 # need to create a config.txt file with the filenames of the data files
