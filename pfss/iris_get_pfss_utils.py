@@ -19,6 +19,7 @@ from datetime import datetime, timedelta
 import warnings
 import pickle
 import time
+import re
 
 # Additional imports that might be required based on the code context
 from sunpy.net import attrs as a
@@ -36,8 +37,8 @@ def get_closest_aia(date_time_obj, wavelength = 193):
     """
     Get the closest AIA image to a given datetime for a specified wavelength.
 
-    This function searches for and downloads the AIA image closest to the input datetime,
-    within a 1-minute window (±30 seconds) for the specified wavelength.
+    This function searches for and uses the local AIA image closest to the input datetime.
+    If no local file is found, Fido can be used as a fallback (currently commented out).
 
     Parameters:
     -----------
@@ -62,32 +63,50 @@ def get_closest_aia(date_time_obj, wavelength = 193):
     aia_start_str = aia_start.strftime(DATE_FORMAT)[:-3]
     aia_end_str = aia_end.strftime(DATE_FORMAT)[:-3]
     
-    max_retries = 5
-    retry_delay = 30
+    aia_local_dir = "/home/ug/orlovsd2/gazelle/pfss/AIA/" #change this to your local directory
+    aia_files = sorted(glob.glob(f"{aia_local_dir}/*.fits"))
+
+    for aia_file in aia_files:
+        match = re.search(r"(\d{4}_\d{2}_\d{2}T\d{2}_\d{2}_\d{2})", aia_file)
+        if match:
+            filename_time_str = match.group(1)  # Extract timestamp from filename
+            formatted_time_str = filename_time_str.replace("_", "-").replace("T", " ")  # Convert format
+            filename_time = datetime.strptime(formatted_time_str, "%Y-%m-%d %H-%M-%S")  # Convert to datetime
+
+            if aia_start <= filename_time <= aia_end:
+                print(f"Using local AIA file: {aia_file}")
+                return sunpy.map.Map(aia_file)  
+
+    print(f"No local AIA file found within ±30 seconds for {date_time_obj}")
+    return None  # If no valid file is found
+
+
+    #max_retries = 5
+    #retry_delay = 120
     
-    for attempt in range(max_retries):
-        try:
-            # Search for AIA data
-            search_results = Fido.search(a.Time(aia_start_str, aia_end_str), a.Instrument.aia, a.Wavelength(wavelength*u.angstrom))
+    #for attempt in range(max_retries):
+    #    try:
+    #        # Search for AIA data
+    #        search_results = Fido.search(a.Time(aia_start_str, aia_end_str), a.Instrument.aia, a.Wavelength(wavelength*u.angstrom))
                     
-            if search_results:
-                # Download the AIA file
-                aia_downloads = Fido.fetch(search_results)
+    #        if search_results:
+    #            # Download the AIA file
+    #            aia_downloads = Fido.fetch(search_results)
                         
-                if aia_downloads:  # Ensure at least one file was downloaded
-                    return sunpy.map.Map(aia_downloads[0])
-                else:
-                    raise ValueError("AIA data download failed, empty list returned.")
+    #            if aia_downloads:  # Ensure at least one file was downloaded
+    #                return sunpy.map.Map(aia_downloads[0])
+    #            else:
+    #                raise ValueError("AIA data download failed, empty list returned.")
 
-            else:
-                raise ValueError("No AIA data found for the requested time.")
+    #        else:
+    #            raise ValueError("No AIA data found for the requested time.")
 
-        except Exception as e:
-            print(f"Attempt {attempt+1} failed: {e}")
-            time.sleep(retry_delay)
+    #    except Exception as e:
+    #        print(f"Attempt {attempt+1} failed: {e}")
+    #        time.sleep(retry_delay)
 
-        print(f"Skipping AIA data for {date_time_obj} after {max_retries} failed attempts.")
-        return None  # Return None instead of crashing
+    #    print(f"Skipping AIA data for {date_time_obj} after {max_retries} failed attempts.")
+    #    return None  # Return None instead of crashing
 
 
 def plot_context_pfss(eis_map):
