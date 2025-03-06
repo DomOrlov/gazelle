@@ -18,6 +18,7 @@ from sunpy.time import parse_time
 from datetime import datetime, timedelta
 import warnings
 import pickle
+import time
 
 # Additional imports that might be required based on the code context
 from sunpy.net import attrs as a
@@ -61,10 +62,33 @@ def get_closest_aia(date_time_obj, wavelength = 193):
     aia_start_str = aia_start.strftime(DATE_FORMAT)[:-3]
     aia_end_str = aia_end.strftime(DATE_FORMAT)[:-3]
     
-    aia_res = Fido.search(a.Time(aia_start_str, aia_end_str), a.Instrument.aia, a.Wavelength(wavelength*u.angstrom))[0][0]
-    aia_downloads = Fido.fetch(aia_res, path="./{instrument}/{file}")
-    aia_map_plot = sunpy.map.Map(aia_downloads[0])
-    return aia_map_plot
+    max_retries = 5
+    retry_delay = 30
+    
+    for attempt in range(max_retries):
+        try:
+            # Search for AIA data
+            search_results = Fido.search(a.Time(aia_start_str, aia_end_str), a.Instrument.aia, a.Wavelength(wavelength*u.angstrom))
+                    
+            if search_results:
+                # Download the AIA file
+                aia_downloads = Fido.fetch(search_results)
+                        
+                if aia_downloads:  # Ensure at least one file was downloaded
+                    return sunpy.map.Map(aia_downloads[0])
+                else:
+                    raise ValueError("AIA data download failed, empty list returned.")
+
+            else:
+                raise ValueError("No AIA data found for the requested time.")
+
+        except Exception as e:
+            print(f"Attempt {attempt+1} failed: {e}")
+            time.sleep(retry_delay)
+
+        print(f"Skipping AIA data for {date_time_obj} after {max_retries} failed attempts.")
+        return None  # Return None instead of crashing
+
 
 def plot_context_pfss(eis_map):
     """
@@ -250,6 +274,7 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     # tracer = pfsspy.tracing.FortranTracer(max_steps=max_steps)
     print('processing fieldlines')
     fieldlines = tracer.trace(SkyCoord(seeds), pfss_output,)
+    print('finished fieldlines')
     return fieldlines
     
 def get_pfss(IRIS_map_dir):
