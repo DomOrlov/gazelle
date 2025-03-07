@@ -20,6 +20,7 @@ import warnings
 import pickle
 import time
 import re
+import glob
 
 # Additional imports that might be required based on the code context
 from sunpy.net import attrs as a
