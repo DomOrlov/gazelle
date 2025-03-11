@@ -298,9 +298,13 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     print('finished fieldlines')
     #return 
 
-    #modified to return open and closed fieldlines
-    open_fieldlines = OpenFieldLines(fieldlines)
-    closed_fieldlines = ClosedFieldLines(fieldlines)
+    # Separate field lines before classification
+    open_lines = [f for f in fieldlines if f.is_open]
+    closed_lines = [f for f in fieldlines if not f.is_open]
+
+    # Create OpenFieldLines and ClosedFieldLines only with valid lines
+    open_fieldlines = OpenFieldLines(open_lines) if open_lines else None
+    closed_fieldlines = ClosedFieldLines(closed_lines) if closed_lines else None
 
     print(f"Total field lines: {len(fieldlines)}")
     print(f"Open field lines: {len(open_fieldlines)}")
