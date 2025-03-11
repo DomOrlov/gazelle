@@ -21,6 +21,7 @@ import pickle
 import time
 import re
 import glob
+from pfsspy.fieldline import OpenFieldLines, ClosedFieldLines
 
 # Additional imports that might be required based on the code context
 from sunpy.net import attrs as a
@@ -295,8 +296,21 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     print('processing fieldlines')
     fieldlines = tracer.trace(SkyCoord(seeds), pfss_output,)
     print('finished fieldlines')
-    return fieldlines
-    
+    #return 
+
+    #modified to return open and closed fieldlines
+    open_fieldlines = OpenFieldLines(fieldlines)
+    closed_fieldlines = ClosedFieldLines(fieldlines)
+
+    print(f"Total field lines: {len(fieldlines)}")
+    print(f"Open field lines: {len(open_fieldlines)}")
+    print(f"Closed field lines: {len(closed_fieldlines)}")
+
+    return open_fieldlines, closed_fieldlines
+
+
+
+
 def get_pfss(IRIS_map_dir):
     IRIS_dir = '/'.join(IRIS_map_dir.split('/')[0:-1])
     IRIS_map = Map(IRIS_map_dir)
