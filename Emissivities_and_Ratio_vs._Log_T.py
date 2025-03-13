@@ -37,10 +37,10 @@ low_fip_lines = {ion: wavelengths for ion, wavelengths in spectral_lines.items()
 high_fip_lines = {ion: wavelengths for ion, wavelengths in spectral_lines.items() if ion.split("_")[0] in high_fip_elements and ion.split("_")[1].isdigit()}
 
 # Temporarily override for validation test
-test_mode = False  # Set to False after testing
+test_mode = True  # Set to False after testing
 
 if test_mode == True:
-    matched_pairs = [("si_10", 258.37, "s_10", 264.23)]  # Replace with known good reference pair
+    matched_pairs = [("ca_14", 193.874, "ar_14", 194.40), ("fe_16", 262.98, "s_13", 256.69)]  # Replace with known good reference pair
 else:
     matched_pairs = [
         (low_ion, low_wvl, high_ion, high_wvl)
@@ -48,7 +48,7 @@ else:
         for low_wvl in low_wavelengths
         for high_ion, high_wavelengths in high_fip_lines.items()
         for high_wvl in high_wavelengths
-        if 2.0 <= abs(low_wvl - high_wvl) <= 3.0  # Adjust for increasing Ångström range
+        if 2.0 <= abs(low_wvl - high_wvl) <= 8.0  # Adjust for increasing Ångström range
     ]
 
 
