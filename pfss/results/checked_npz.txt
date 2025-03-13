@@ -1,0 +1,100 @@
+Checking directory: /home/ug/orlovsd2/gazelle/pfss/results/eis_20140201_105035
+Found .npz files: ['eis_20140201_105035_composition_CaAr.npz', 'eis_20140201_105035_composition_sar.npz', 'eis_20140201_105035_composition_sis.npz', 'eis_20140201_105035_dem_combined.npz', 'eis_20140201_105035_composition_FeS.npz']
+
+Final Summary:
+eis_20140201_105035_composition_CaAr.npz: 3 lines, Labels saved: No
+eis_20140201_105035_composition_sar.npz: 3 lines, Labels saved: No
+eis_20140201_105035_composition_sis.npz: 3 lines, Labels saved: No
+eis_20140201_105035_dem_combined.npz: 4 lines, Labels saved: No
+eis_20140201_105035_composition_FeS.npz: 3 lines, Labels saved: No
+
+Checking directory: /home/ug/orlovsd2/gazelle/pfss/results/eis_20140201_105035
+Found .npz files: ['eis_20140201_105035_composition_CaAr.npz', 'eis_20140201_105035_composition_sar.npz', 'eis_20140201_105035_composition_sis.npz', 'eis_20140201_105035_dem_combined.npz', 'eis_20140201_105035_composition_FeS.npz']
+
+Final Summary:
+eis_20140201_105035_composition_CaAr.npz: 3 lines, Labels saved: No
+eis_20140201_105035_composition_sar.npz: 3 lines, Labels saved: No
+eis_20140201_105035_composition_sis.npz: 3 lines, Labels saved: No
+eis_20140201_105035_dem_combined.npz: 4 lines, Labels saved: No
+eis_20140201_105035_composition_FeS.npz: 3 lines, Labels saved: No
+
+Checking directory: /home/ug/orlovsd2/gazelle/pfss/results/eis_20140201_125441
+Found .npz files: ['eis_20140201_125441_composition_sis.npz', 'eis_20140201_125441_composition_FeS.npz', 'eis_20140201_125441_composition_sar.npz', 'eis_20140201_125441_composition_CaAr.npz', 'eis_20140201_125441_dem_combined.npz']
+
+Final Summary:
+eis_20140201_125441_composition_sis.npz: 3 lines, Labels saved: No
+eis_20140201_125441_composition_FeS.npz: 3 lines, Labels saved: No
+eis_20140201_125441_composition_sar.npz: 3 lines, Labels saved: No
+eis_20140201_125441_composition_CaAr.npz: 3 lines, Labels saved: No
+eis_20140201_125441_dem_combined.npz: 4 lines, Labels saved: No
+
+Checking directory: /home/ug/orlovsd2/gazelle/pfss/results/eis_20140202_102527
+Found .npz files: ['eis_20140202_102527_dem_combined.npz', 'eis_20140202_102527_composition_sar.npz', 'eis_20140202_102527_composition_sis.npz', 'eis_20140202_102527_composition_FeS.npz', 'eis_20140202_102527_composition_CaAr.npz']
+
+Final Summary:
+eis_20140202_102527_dem_combined.npz: 4 lines, Labels saved: No
+eis_20140202_102527_composition_sar.npz: 3 lines, Labels saved: No
+eis_20140202_102527_composition_sis.npz: 3 lines, Labels saved: No
+eis_20140202_102527_composition_FeS.npz: 3 lines, Labels saved: No
+eis_20140202_102527_composition_CaAr.npz: 3 lines, Labels saved: No
+
+Checking directory: /home/ug/orlovsd2/gazelle/pfss/results/eis_20140202_122934
+Found .npz files: ['eis_20140202_122934_composition_sis.npz', 'eis_20140202_122934_composition_FeS.npz', 'eis_20140202_122934_dem_combined.npz', 'eis_20140202_122934_composition_CaAr.npz', 'eis_20140202_122934_composition_sar.npz']
+
+Final Summary:
+eis_20140202_122934_composition_sis.npz: 3 lines, Labels saved: No
+eis_20140202_122934_composition_FeS.npz: 3 lines, Labels saved: No
+eis_20140202_122934_dem_combined.npz: 4 lines, Labels saved: No
+eis_20140202_122934_composition_CaAr.npz: 3 lines, Labels saved: No
+eis_20140202_122934_composition_sar.npz: 3 lines, Labels saved: No
+
+Checking directory: /home/ug/orlovsd2/gazelle/pfss/results/eis_20140202_141952
+Found .npz files: ['eis_20140202_141952_composition_sis.npz', 'eis_20140202_141952_composition_sar.npz', 'eis_20140202_141952_dem_combined.npz', 'eis_20140202_141952_composition_CaAr.npz', 'eis_20140202_141952_composition_FeS.npz']
+
+Final Summary:
+eis_20140202_141952_composition_sis.npz: 3 lines, Labels saved: No
+eis_20140202_141952_composition_sar.npz: 3 lines, Labels saved: No
+eis_20140202_141952_dem_combined.npz: 4 lines, Labels saved: No
+eis_20140202_141952_composition_CaAr.npz: 3 lines, Labels saved: No
+eis_20140202_141952_composition_FeS.npz: 3 lines, Labels saved: No
+
+Checking directory: /home/ug/orlovsd2/gazelle/pfss/results/eis_20140203_093134
+Found .npz files: ['eis_20140203_093134_composition_sar.npz', 'eis_20140203_093134_dem_combined.npz', 'eis_20140203_093134_composition_sis.npz', 'eis_20140203_093134_composition_FeS.npz', 'eis_20140203_093134_composition_CaAr.npz']
+
+Final Summary:
+eis_20140203_093134_composition_sar.npz: 3 lines, Labels saved: No
+eis_20140203_093134_dem_combined.npz: 4 lines, Labels saved: No
+eis_20140203_093134_composition_sis.npz: 3 lines, Labels saved: No
+eis_20140203_093134_composition_FeS.npz: 3 lines, Labels saved: No
+eis_20140203_093134_composition_CaAr.npz: 3 lines, Labels saved: No
+
+Checking directory: /home/ug/orlovsd2/gazelle/pfss/results/eis_20140203_113540
+Found .npz files: ['eis_20140203_113540_composition_FeS.npz', 'eis_20140203_113540_composition_sis.npz', 'eis_20140203_113540_dem_combined.npz', 'eis_20140203_113540_composition_CaAr.npz', 'eis_20140203_113540_composition_sar.npz']
+
+Final Summary:
+eis_20140203_113540_composition_FeS.npz: 3 lines, Labels saved: No
+eis_20140203_113540_composition_sis.npz: 3 lines, Labels saved: No
+eis_20140203_113540_dem_combined.npz: 4 lines, Labels saved: No
+eis_20140203_113540_composition_CaAr.npz: 3 lines, Labels saved: No
+eis_20140203_113540_composition_sar.npz: 3 lines, Labels saved: No
+
+Checking directory: /home/ug/orlovsd2/gazelle/pfss/results/eis_20140205_104127
+Found .npz files: ['eis_20140205_104127_composition_CaAr.npz', 'eis_20140205_104127_dem_combined.npz', 'eis_20140205_104127_composition_FeS.npz', 'eis_20140205_104127_composition_sis.npz', 'eis_20140205_104127_composition_sar.npz']
+
+Final Summary:
+eis_20140205_104127_composition_CaAr.npz: 3 lines, Labels saved: No
+eis_20140205_104127_dem_combined.npz: 4 lines, Labels saved: No
+eis_20140205_104127_composition_FeS.npz: 3 lines, Labels saved: No
+eis_20140205_104127_composition_sis.npz: 3 lines, Labels saved: No
+eis_20140205_104127_composition_sar.npz: 3 lines, Labels saved: No
+
+Checking directory: /home/ug/orlovsd2/gazelle/pfss/results/eis_20140205_124534
+Found .npz files: ['eis_20140205_124534_dem_combined.npz', 'eis_20140205_124534_composition_sis.npz', 'eis_20140205_124534_composition_CaAr.npz', 'eis_20140205_124534_composition_FeS.npz', 'eis_20140205_124534_composition_sar.npz']
+
+Final Summary:
+eis_20140205_124534_dem_combined.npz: 4 lines, Labels saved: No
+eis_20140205_124534_composition_sis.npz: 3 lines, Labels saved: No
+eis_20140205_124534_composition_CaAr.npz: 3 lines, Labels saved: No
+eis_20140205_124534_composition_FeS.npz: 3 lines, Labels saved: No
+eis_20140205_124534_composition_sar.npz: 3 lines, Labels saved: No
+

@@ -1,0 +1,10 @@
+Checking directory: /home/ug/orlovsd2/gazelle/pfss/results/eis_20140201_105035
+Found .npz files: ['eis_20140201_105035_composition_CaAr.npz', 'eis_20140201_105035_composition_sar.npz', 'eis_20140201_105035_composition_sis.npz', 'eis_20140201_105035_dem_combined.npz', 'eis_20140201_105035_composition_FeS.npz']
+
+Final Summary:
+eis_20140201_105035_composition_CaAr.npz: 3 lines, Labels saved: No
+eis_20140201_105035_composition_sar.npz: 3 lines, Labels saved: No
+eis_20140201_105035_composition_sis.npz: 3 lines, Labels saved: No
+eis_20140201_105035_dem_combined.npz: 4 lines, Labels saved: No
+eis_20140201_105035_composition_FeS.npz: 3 lines, Labels saved: No
+
