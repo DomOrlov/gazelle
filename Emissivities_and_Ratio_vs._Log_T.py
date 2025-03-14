@@ -6,6 +6,8 @@ import numpy as np
 
 template_dir = "/home/ug/orlovsd2/eispac/eispac/data/templates"
 
+error_log = []
+
 # Get all .h5 template files
 template_files = [f for f in os.listdir(template_dir) if f.endswith(".h5")]
 
@@ -26,6 +28,7 @@ for filename in template_files:
                 wavelength = float(f"{wavelength_match.group(1)}.{wavelength_match.group(2)}")  # Convert to Ångströms
             except ValueError:
                 print(f"Skipping {filename} due to invalid wavelength format")
+                error_log.append(f"Skipping {filename} due to invalid wavelength format")
                 continue
             spectral_lines.setdefault(ion, set()).add(wavelength) 
 
@@ -57,10 +60,13 @@ else:
 
 for pair in matched_pairs:
     print(f"{pair[0]} {pair[1]:.3f} Å / {pair[2]} {pair[3]:.3f} Å")
+    error_log.append(f"{pair[0]} {pair[1]:.3f} Å / {pair[2]} {pair[3]:.3f} Å")
 
-# Print matched pairs
-for pair in matched_pairs:
-    print(f"{pair[0]} {pair[1]} Å / {pair[2]} {pair[3]} Å")
+## Print matched pairs
+#for pair in matched_pairs:
+#    print(f"{pair[0]} {pair[1]} Å / {pair[2]} {pair[3]} Å")
+#    error_log.append(f"{pair[0]} {pair[1]} Å / {pair[2]} {pair[3]} Å")
+    
 
 
 #================================================================================
@@ -80,14 +86,18 @@ def find_line_index(ion_obj, target_wavelength):
     """Find the index of the spectral line closest to the target wavelength."""
     if not hasattr(ion_obj, "Wgfa") or "wvl" not in ion_obj.Wgfa:  # Check if the ion has wavelength data
         print(f"Skipping {ion_obj.Spectroscopic} - No 'wvl' data available")
+        error_log.append(f"Skipping {ion_obj.Spectroscopic} - No 'wvl' data available")
         return None  # Skip this ion if no wavelength data exists
     wavelengths = np.asarray(ion_obj.Wgfa.get('wvl', []))  # Retrieve the wavelength array
     if wavelengths.size == 0:  # Check if the array is empty
         print(f"Skipping {ion_obj.Spectroscopic} - Empty wavelength data")
+        error_log.append(f"Skipping {ion_obj.Spectroscopic} - Empty wavelength data")
         return None
     if low_index is not None and high_index is not None:
         print(f"{low_ion}: Target {low_wvl}Å, CHIANTI closest: {low_ion_obj.Wgfa['wvl'][low_index]}Å")
-        print(f"{high_ion}: Target {high_wvl}Å, CHIANTI closest: {high_ion_obj.Wgfa['wvl'][high_index]}Å")    
+        error_log.append(f"{low_ion}: Target {low_wvl}Å, CHIANTI closest: {low_ion_obj.Wgfa['wvl'][low_index]}Å")
+        print(f"{high_ion}: Target {high_wvl}Å, CHIANTI closest: {high_ion_obj.Wgfa['wvl'][high_index]}Å")   
+        error_log.append(f"{high_ion}: Target {high_wvl}Å, CHIANTI closest: {high_ion_obj.Wgfa['wvl'][high_index]}Å") 
     return np.argmin(np.abs(wavelengths - target_wavelength))  # Return the index of the closest wavelength
 
 
@@ -101,14 +111,17 @@ def get_chianti_ion(ion_name, temperature, eDensity):
     key = (ion_name, temperature_key, eDensity_key)
     if key in ion_cache:
         print(f"Using cached {ion_name} for T={temperature_key}, ne={eDensity_key}")
+        error_log.append(f"Using cached {ion_name} for T={temperature_key}, ne={eDensity_key}")
         return ion_cache[key]
     print(f"Loading {ion_name} for T={temperature_key}, ne={eDensity_key}...")
+    error_log.append(f"Loading {ion_name} for T={temperature_key}, ne={eDensity_key}...")
     try:
         ion_obj = ch.ion(ion_name, temperature=np.array(temperature), eDensity=np.array([eDensity]))  # Use single-value array
         ion_cache[key] = ion_obj
         return ion_obj
     except Exception as e:
         print(f"Error loading {ion_name}: {e}")
+        error_log.append(f"Error loading {ion_name}: {e}")
         return None
 
 
@@ -119,28 +132,35 @@ logT_stop = 7
 
 for low_ion, low_wvl, high_ion, high_wvl in matched_pairs:
     print(f"Processing pair {processed_pairs + 1} / {len(matched_pairs)}: {low_ion} {low_wvl}Å / {high_ion} {high_wvl}Å")
+    error_log.append(f"Processing pair {processed_pairs + 1} / {len(matched_pairs)}: {low_ion} {low_wvl}Å / {high_ion} {high_wvl}Å")
     
     processed_pairs += 1
 
 
 print(f"T_range min: {np.log10(min(T_range)):.2f}, max: {np.log10(max(T_range)):.2f}")
+error_log.append(f"T_range min: {np.log10(min(T_range)):.2f}, max: {np.log10(max(T_range)):.2f}")
 
 for low_ion, low_wvl, high_ion, high_wvl in matched_pairs:
     if max_pairs is not None and processed_pairs >= max_pairs:
         print(f"Stopping after {processed_pairs} pairs processed.")
+        error_log.append(f"Stopping after {processed_pairs} pairs processed.")
         break
     try:
         print(f"\n========== Processing Pair: {low_ion} ({low_wvl}Å) / {high_ion} ({high_wvl}Å) ==========\n")
+        error_log.append(f"\n========== Processing Pair: {low_ion} ({low_wvl}Å) / {high_ion} ({high_wvl}Å) ==========\n")
         pair_fully_processed = False  # Track if this pair has been fully processed
         for ne in electron_densities:
             ne = float(ne)  # Ensure electron density is a float
             ne_array = np.array([ne], dtype=float)  # Convert to a 1D NumPy array
             print(f"\nDebug: Electron Density ne={ne}, Type={type(ne)}, Shape={ne_array.shape}")
+            error_log.append(f"\nDebug: Electron Density ne={ne}, Type={type(ne)}, Shape={ne_array.shape}")
             try:
                 print(f"Debug: Creating ion objects for {low_ion} and {high_ion} with ne_array={ne_array}")
+                error_log.append(f"Debug: Creating ion objects for {low_ion} and {high_ion} with ne_array={ne_array}")
                 low_ion_obj = ch.ion(low_ion, temperature=np.array([T_range[0]], dtype=float), eDensity=ne_array)
                 high_ion_obj = ch.ion(high_ion, temperature=np.array([T_range[0]], dtype=float), eDensity=ne_array)
                 print(f"Debug: Successfully created ion objects for {low_ion} and {high_ion}")
+                error_log.append(f"Debug: Successfully created ion objects for {low_ion} and {high_ion}")
                 # Initialize `low_index` and `high_index` before use
                 low_index, high_index = None, None
                 try:
@@ -148,12 +168,15 @@ for low_ion, low_wvl, high_ion, high_wvl in matched_pairs:
                     high_index = find_line_index(high_ion_obj, high_wvl)
                 except Exception as e:
                     print(f"Error: Exception occurred in find_line_index - {e}")
+                    error_log.append(f"Error: Exception occurred in find_line_index - {e}")
                     continue  # Skip this pair
                 if low_index is None:
                     print(f"Warning: No valid index found for {low_ion} at {low_wvl}Å, skipping...")
+                    error_log.append(f"Warning: No valid index found for {low_ion} at {low_wvl}Å, skipping...")
                     continue
                 if high_index is None:
                     print(f"Warning: No valid index found for {high_ion} at {high_wvl}Å, skipping...")
+                    error_log.append(f"Warning: No valid index found for {high_ion} at {high_wvl}Å, skipping...")
                     continue
                 low_emissivities = []
                 high_emissivities = []
@@ -189,20 +212,24 @@ for low_ion, low_wvl, high_ion, high_wvl in matched_pairs:
                     pair_fully_processed = True  # Successfully processed at least one density
             except Exception as e:
                 print(f"Skipping density {ne} for {low_ion} {low_wvl}Å / {high_ion} {high_wvl}Å - CHIANTI error: {e}")
+                error_log.append(f"Skipping density {ne} for {low_ion} {low_wvl}Å / {high_ion} {high_wvl}Å - CHIANTI error: {e}")
                 continue
         if pair_fully_processed:
             processed_pairs += 1
     except Exception as e:
         print(f"Skipping {low_ion} {low_wvl} Å / {high_ion} {high_wvl} Å due to error: {e}")
+        error_log.append(f"Skipping {low_ion} {low_wvl} Å / {high_ion} {high_wvl} Å due to error: {e}")
 
 
 for key, (low_emiss, high_emiss) in emissivity_data.items():
     print(f"{key}: Low FIP Emissivity = {low_emiss}, High FIP Emissivity = {high_emiss}")
+    error_log.append(f"{key}: Low FIP Emissivity = {low_emiss}, High FIP Emissivity = {high_emiss}")
 
 
 for key, (low_emiss, high_emiss) in emissivity_data.items():
     ratio = low_emiss / high_emiss
     print(f"{key}: Ratio (Low FIP / High FIP) = {ratio}")
+    error_log.append(f"{key}: Ratio (Low FIP / High FIP) = {ratio}")
 
 
 #--------------------------------------------------------------------------------
@@ -243,6 +270,7 @@ def plot_emissivity_ratios(emissivity_data, logT):
                 high_emiss_norm = high_emiss / np.max(high_emiss_valid)
             else:
                 print(f"Warning: No valid emissivity data for {low_ion} {low_wvl}Å / {high_ion} {high_wvl}Å at ne={ne}")
+                error_log.append(f"Warning: No valid emissivity data for {low_ion} {low_wvl}Å / {high_ion} {high_wvl}Å at ne={ne}")
             ax.plot(logT, low_emiss_norm, 'k-', label=f'{low_ion.upper()} {low_wvl}Å at 1e9')
             ax.plot(logT, high_emiss_norm, 'k--', label=f'{high_ion.upper()} {high_wvl}Å at 1e9')
         # Plot ratios at different densities
@@ -266,7 +294,20 @@ def plot_emissivity_ratios(emissivity_data, logT):
         plt.close(fig)
         print(f"Saved: {filename}")
 
+from datetime import datetime
+# Define log file path (modify the folder as needed)
+log_folder = "/home/ug/orlovsd2/gazelle"  # Change this to your desired directory
+os.makedirs(log_folder, exist_ok=True)  # Ensure the folder exists
 
+error_log_path = os.path.join(log_folder, "error_log.txt")
+
+# Write the error log to a file
+with open(error_log_path, "w", encoding="utf-8") as log_file:
+    log_file.write(f"Log start time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+    log_file.write("=" * 50 + "\n")
+    for err in error_log:
+        log_file.write(err + "\n")
+    log_file.write("\nLog end.\n")
 
 # Run the function
 plot_emissivity_ratios(emissivity_data, logT)
