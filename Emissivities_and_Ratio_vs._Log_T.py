@@ -40,7 +40,11 @@ high_fip_lines = {ion: wavelengths for ion, wavelengths in spectral_lines.items(
 test_mode = True  # Set to False after testing
 
 if test_mode == True:
-    matched_pairs = [("ca_14", 193.874, "ar_14", 194.40), ("fe_16", 262.98, "s_13", 256.69)]  # Replace with known good reference pair
+    matched_pairs = [
+        ("ca_14", 193.87, "ar_14", 194.40),
+        ("fe_16", 262.98, "s_13", 256.69)
+    ]
+
 else:
     matched_pairs = [
         (low_ion, low_wvl, high_ion, high_wvl)
@@ -51,6 +55,8 @@ else:
         if 2.0 <= abs(low_wvl - high_wvl) <= 8.0  # Adjust for increasing Ångström range
     ]
 
+for pair in matched_pairs:
+    print(f"{pair[0]} {pair[1]:.3f} Å / {pair[2]} {pair[3]:.3f} Å")
 
 # Print matched pairs
 for pair in matched_pairs:
