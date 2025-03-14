@@ -253,7 +253,7 @@ def plot_emissivity_ratios(emissivity_data, logT):
         ax.set_yscale('log')
         ax.set_xlabel('Log T (K)')
         ax.set_ylabel('Emissivity and Emissivity Ratio')
-        ax.set_xlim(5.8, 6.9)
+        ax.set_xlim(6.0, 7.2)  # **Updated to match the good plot**
         ax.set_ylim(0.1, 10)  # **Updated to match the good plot**
         ax.set_yticks([1e-2, 1e-1, 1e0, 1e1])
         ax.get_yaxis().set_major_formatter(ticker.ScalarFormatter())
