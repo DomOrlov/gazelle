@@ -73,8 +73,8 @@ for pair in matched_pairs:
 # Process matched pairs and calculate emissivities
 
 # Function to find closest spectral lines
-import numpy as np
-import ChiantiPy.core as ch  # type: ignore
+
+
 
 T_range = np.logspace(5.8, 7.0, num=120)  # Extend to log(T) = 7 
 logT = np.log10(T_range)
@@ -235,13 +235,13 @@ for key, (low_emiss, high_emiss) in emissivity_data.items():
 #--------------------------------------------------------------------------------
 #now we finally plot the data
 
-import numpy as np
+
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import matplotlib
 import matplotlib.cm as cm
 
-colors_ratio = ['red', 'red', 'red']  # Red for all ratio curves
+colors_ratio = ['purple', 'green', 'yellow']  # Colors for the ratio curves
 colors_non_ratio = 'black'  # Black for normal emissivity curves
 matplotlib.use('Agg')  # Change this to 'TkAgg' if needed, or 'Agg' for saving only
 
