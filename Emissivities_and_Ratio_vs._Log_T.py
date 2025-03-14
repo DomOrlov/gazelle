@@ -216,7 +216,7 @@ import matplotlib.cm as cm
 
 colors_ratio = ['red', 'red', 'red']  # Red for all ratio curves
 colors_non_ratio = 'black'  # Black for normal emissivity curves
-matplotlib.use('QtAgg')  # Change this to 'TkAgg' if needed, or 'Agg' for saving only
+matplotlib.use('Agg')  # Change this to 'TkAgg' if needed, or 'Agg' for saving only
 
 def plot_emissivity_ratios(emissivity_data, logT):
     plt.ioff()  # Turn off interactive mode for better script-based plotting
