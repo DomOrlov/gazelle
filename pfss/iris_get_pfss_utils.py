@@ -246,20 +246,22 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     # Expand the coordinates by 10% in each direction
     blc_ar_synop = change_obstime(
         SkyCoord(
-            map.bottom_left_coord.Tx - 0.1 * (map.top_right_coord.Tx - map.bottom_left_coord.Tx),
-            map.bottom_left_coord.Ty - 0.1 * (map.top_right_coord.Ty - map.bottom_left_coord.Ty),
+            lon=map.bottom_left_coord.lon - 0.1 * (map.top_right_coord.lon - map.bottom_left_coord.lon),
+            lat=map.bottom_left_coord.lat - 0.1 * (map.top_right_coord.lat - map.bottom_left_coord.lat),
             frame=map.coordinate_frame
         ).transform_to(new_frame),
         m_hmi_resample.date
     )
+
     trc_ar_synop = change_obstime(
         SkyCoord(
-            map.top_right_coord.Tx + 0.1 * (map.top_right_coord.Tx - map.bottom_left_coord.Tx),
-            map.top_right_coord.Ty + 0.1 * (map.top_right_coord.Ty - map.bottom_left_coord.Ty),
+            lon=map.top_right_coord.lon + 0.1 * (map.top_right_coord.lon - map.bottom_left_coord.lon),
+            lat=map.top_right_coord.lat + 0.1 * (map.top_right_coord.lat - map.bottom_left_coord.lat),
             frame=map.coordinate_frame
         ).transform_to(new_frame),
         m_hmi_resample.date
     )
+
     # masked_pix_y, masked_pix_x = np.where((m_hmi_resample.data > 10) | (m_hmi_resample.data < 10))
     # seeds = m_hmi_resample.pixel_to_world(masked_pix_x*u.pix, masked_pix_y*u.pix,).make_3d()
 
