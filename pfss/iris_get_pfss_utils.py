@@ -213,6 +213,8 @@ def plot_context_pfss(eis_map):
     
 def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 540)):
 
+    print("Min Gauss:", min_gauss, "Max Gauss:", max_gauss)
+
     # Create date_time_obj for get_closest_aia
     date_time_obj = map.date.datetime
     aia_map = get_closest_aia(date_time_obj)
@@ -238,7 +240,7 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     
     # Resample the HMI data to a specific resolution
     m_hmi_resample = m_hmi.resample(dimension*u.pix)
-
+    print("HMI Resampled Data Range:", np.min(m_hmi_resample.data), "to", np.max(m_hmi_resample.data))
     new_frame = change_obstime_frame(m_hmi_resample.coordinate_frame, map.date)
     # Expand the coordinates by 10% in each direction
     blc_ar_synop = change_obstime(
@@ -262,6 +264,9 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
 
     # Find the masked pixels based on a condition
     masked_pix_y, masked_pix_x = np.where((m_hmi_resample.data >=max_gauss) | (m_hmi_resample.data < min_gauss))
+
+    print("Filtered Values:")
+    print(m_hmi_resample.data[masked_pix_y, masked_pix_x])
 
     seeds = m_hmi_resample.pixel_to_world(masked_pix_x*u.pix, masked_pix_y*u.pix,).make_3d()
     in_lon = np.logical_and(seeds.lon > blc_ar_synop.lon, seeds.lon < trc_ar_synop.lon)
@@ -298,12 +303,10 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     print('finished fieldlines')
     #return 
 
-    # Separate field lines before classification
     print('Separating field lines before classification')    
     open_lines = [f for f in fieldlines if f.is_open]
     closed_lines = [f for f in fieldlines if not f.is_open]
 
-    # Create OpenFieldLines and ClosedFieldLines only with valid lines
     print('Create OpenFieldLines and ClosedFieldLines only with valid lines')
     open_fieldlines = OpenFieldLines(open_lines) if open_lines else OpenFieldLines([])
     closed_fieldlines = ClosedFieldLines(closed_lines) if closed_lines else ClosedFieldLines([])
