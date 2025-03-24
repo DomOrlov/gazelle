@@ -281,11 +281,16 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     print("Filtered Values:")
     print(m_hmi_resample.data[masked_pix_y, masked_pix_x])
 
+    print(f"Number of masked pixels: {len(masked_pix_x)}")
+
+
     seeds = m_hmi_resample.pixel_to_world(masked_pix_x*u.pix, masked_pix_y*u.pix,).make_3d()
+    print(f"Number of initial seed points: {len(seeds)}")
+
     in_lon = np.logical_and(seeds.lon > blc_ar_synop.lon, seeds.lon < trc_ar_synop.lon)
     in_lat = np.logical_and(seeds.lat > blc_ar_synop.lat, seeds.lat < trc_ar_synop.lat)
     seeds = seeds[np.where(np.logical_and(in_lon, in_lat))]
-
+    print(f"Number of seeds after FOV filtering: {len(seeds)}")
         
     # masked_pix_y, masked_pix_x = np.where((m_hmi_resample.data <=-7))
     # masked_pix_y, masked_pix_x = np.where((m_hmi_resample.data > 7))
