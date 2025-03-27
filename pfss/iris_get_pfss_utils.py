@@ -22,6 +22,7 @@ import time
 import re
 import glob
 from pfsspy.fieldline import OpenFieldLines, ClosedFieldLines
+from astropy.coordinates import Longitude, Latitude
 
 # Additional imports that might be required based on the code context
 from sunpy.net import attrs as a
@@ -258,20 +259,22 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
 
     blc_ar_synop = change_obstime(
         SkyCoord(
-            lon=blc_lon,
-            lat=blc_lat,
-            frame=map.coordinate_frame,
-            representation_type='spherical'
+            Longitude(blc_lon),
+            Latitude(blc_lat),
+            frame='heliographic_stonyhurst',
+            representation_type='spherical',
+            obstime=map.date
         ).transform_to(new_frame),
         m_hmi_resample.date
     )
 
     trc_ar_synop = change_obstime(
         SkyCoord(
-            lon=trc_lon,
-            lat=trc_lat,
-            frame=map.coordinate_frame,
-            representation_type='spherical'
+            Longitude(trc_lon),
+            Latitude(trc_lat),
+            frame='heliographic_stonyhurst',
+            representation_type='spherical',
+            obstime=map.date
         ).transform_to(new_frame),
         m_hmi_resample.date
     )
