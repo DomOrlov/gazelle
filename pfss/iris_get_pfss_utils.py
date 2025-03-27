@@ -253,20 +253,25 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
         -90 * u.deg, 90 * u.deg
     )
 
+    blc_lon = map.bottom_left_coord.spherical.lon - 0.1 * (map.top_right_coord.spherical.lon - map.bottom_left_coord.spherical.lon)
+    trc_lon = map.top_right_coord.spherical.lon + 0.1 * (map.top_right_coord.spherical.lon - map.bottom_left_coord.spherical.lon)
+
     blc_ar_synop = change_obstime(
         SkyCoord(
-            lon=map.bottom_left_coord.spherical.lon - 0.1 * (map.top_right_coord.spherical.lon - map.bottom_left_coord.spherical.lon),
+            lon=blc_lon,
             lat=blc_lat,
-            frame=map.coordinate_frame
+            frame=map.coordinate_frame,
+            representation_type='spherical'
         ).transform_to(new_frame),
         m_hmi_resample.date
     )
 
     trc_ar_synop = change_obstime(
         SkyCoord(
-            lon=map.top_right_coord.spherical.lon + 0.1 * (map.top_right_coord.spherical.lon - map.bottom_left_coord.spherical.lon),
+            lon=trc_lon,
             lat=trc_lat,
-            frame=map.coordinate_frame
+            frame=map.coordinate_frame,
+            representation_type='spherical'
         ).transform_to(new_frame),
         m_hmi_resample.date
     )
