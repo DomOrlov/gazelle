@@ -245,17 +245,17 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     new_frame = change_obstime_frame(m_hmi_resample.coordinate_frame, map.date)
     # Expand the coordinates by 10% in each direction
     blc_lat = np.clip(
-        map.bottom_left_coord.lat - 0.1 * (map.top_right_coord.lat - map.bottom_left_coord.lat),
+        map.bottom_left_coord.spherical.lat - 0.1 * (map.top_right_coord.spherical.lat - map.bottom_left_coord.spherical.lat),
         -90 * u.deg, 90 * u.deg
     )
     trc_lat = np.clip(
-        map.top_right_coord.lat + 0.1 * (map.top_right_coord.lat - map.bottom_left_coord.lat),
+        map.top_right_coord.spherical.lat + 0.1 * (map.top_right_coord.spherical.lat - map.bottom_left_coord.spherical.lat),
         -90 * u.deg, 90 * u.deg
     )
 
     blc_ar_synop = change_obstime(
         SkyCoord(
-            lon=map.bottom_left_coord.lon - 0.1 * (map.top_right_coord.lon - map.bottom_left_coord.lon),
+            lon=map.bottom_left_coord.spherical.lon - 0.1 * (map.top_right_coord.spherical.lon - map.bottom_left_coord.spherical.lon),
             lat=blc_lat,
             frame=map.coordinate_frame
         ).transform_to(new_frame),
@@ -264,7 +264,7 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
 
     trc_ar_synop = change_obstime(
         SkyCoord(
-            lon=map.top_right_coord.lon + 0.1 * (map.top_right_coord.lon - map.bottom_left_coord.lon),
+            lon=map.top_right_coord.spherical.lon + 0.1 * (map.top_right_coord.spherical.lon - map.bottom_left_coord.spherical.lon),
             lat=trc_lat,
             frame=map.coordinate_frame
         ).transform_to(new_frame),
@@ -334,7 +334,7 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     print(f"Total field lines: {len(fieldlines)}")
     print(f"Open field lines: {len(open_fieldlines)}")
     print(f"Closed field lines: {len(closed_fieldlines)}")
-
+    print("Map coordinate frame:", map.coordinate_frame)
     return open_fieldlines, closed_fieldlines
 
 
