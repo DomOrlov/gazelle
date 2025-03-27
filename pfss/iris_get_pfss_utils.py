@@ -219,9 +219,9 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     date_time_obj = map.date.datetime
     aia_map = get_closest_aia(date_time_obj)
     
-    hp_lon = np.linspace(map.bottom_left_coord.lon/u.deg, map.top_right_coord.lon/u.deg, round(len(map.data[0,:]))) * u.deg
-    hp_lat = np.linspace(map.bottom_left_coord.lat/u.deg, map.top_right_coord.lat/u.deg, round(len(map.data[:,0]))) * u.deg
-   
+    hp_lon = np.linspace(map.bottom_left_coord.spherical.lon/u.deg, map.top_right_coord.spherical.lon/u.deg, round(len(map.data[0,:]))) * u.deg
+    hp_lat = np.linspace(map.bottom_left_coord.spherical.lat/u.deg, map.top_right_coord.spherical.lat/u.deg, round(len(map.data[:,0]))) * u.deg
+    
 
 
     # Make a 2D grid from these 1D points
@@ -278,10 +278,12 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     # Find the masked pixels based on a condition
     masked_pix_y, masked_pix_x = np.where((m_hmi_resample.data >=max_gauss) | (m_hmi_resample.data < min_gauss))
 
+    print(f"Number of masked pixels: {len(masked_pix_x)}")
+    
     print("Filtered Values:")
     print(m_hmi_resample.data[masked_pix_y, masked_pix_x])
 
-    print(f"Number of masked pixels: {len(masked_pix_x)}")
+
 
 
     seeds = m_hmi_resample.pixel_to_world(masked_pix_x*u.pix, masked_pix_y*u.pix,).make_3d()
