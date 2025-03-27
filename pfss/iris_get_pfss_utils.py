@@ -219,9 +219,9 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     date_time_obj = map.date.datetime
     aia_map = get_closest_aia(date_time_obj)
     
-    hp_lon = np.linspace(map.bottom_left_coord.lon/u.deg, map.top_right_coord.lon/u.deg, round(len(map.data[0,:]))) * u.deg
-    hp_lat = np.linspace(map.bottom_left_coord.lat/u.deg, map.top_right_coord.lat/u.deg, round(len(map.data[:,0]))) * u.deg
-   
+    hp_lon = np.linspace(map.bottom_left_coord.Tx/u.arcsec, map.top_right_coord.Tx/u.arcsec, round(len(map.data[0,:]))) * u.arcsec
+    hp_lat = np.linspace(map.bottom_left_coord.Ty/u.arcsec, map.top_right_coord.Ty/u.arcsec, round(len(map.data[0,::]))) * u.arcsec
+    
 
 
     # Make a 2D grid from these 1D points
