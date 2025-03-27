@@ -22,7 +22,6 @@ import time
 import re
 import glob
 from pfsspy.fieldline import OpenFieldLines, ClosedFieldLines
-from astropy.coordinates import Longitude, Latitude
 
 # Additional imports that might be required based on the code context
 from sunpy.net import attrs as a
@@ -220,9 +219,9 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     date_time_obj = map.date.datetime
     aia_map = get_closest_aia(date_time_obj)
     
-    hp_lon = np.linspace(map.bottom_left_coord.spherical.lon/u.deg, map.top_right_coord.spherical.lon/u.deg, round(len(map.data[0,:]))) * u.deg
-    hp_lat = np.linspace(map.bottom_left_coord.spherical.lat/u.deg, map.top_right_coord.spherical.lat/u.deg, round(len(map.data[:,0]))) * u.deg
-    
+    hp_lon = np.linspace(map.bottom_left_coord.lon/u.deg, map.top_right_coord.lon/u.deg, round(len(map.data[0,:]))) * u.deg
+    hp_lat = np.linspace(map.bottom_left_coord.lat/u.deg, map.top_right_coord.lat/u.deg, round(len(map.data[:,0]))) * u.deg
+   
 
 
     # Make a 2D grid from these 1D points
@@ -246,35 +245,28 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     new_frame = change_obstime_frame(m_hmi_resample.coordinate_frame, map.date)
     # Expand the coordinates by 10% in each direction
     blc_lat = np.clip(
-        map.bottom_left_coord.spherical.lat - 0.1 * (map.top_right_coord.spherical.lat - map.bottom_left_coord.spherical.lat),
+        map.bottom_left_coord.lat - 0.1 * (map.top_right_coord.lat - map.bottom_left_coord.lat),
         -90 * u.deg, 90 * u.deg
     )
     trc_lat = np.clip(
-        map.top_right_coord.spherical.lat + 0.1 * (map.top_right_coord.spherical.lat - map.bottom_left_coord.spherical.lat),
+        map.top_right_coord.lat + 0.1 * (map.top_right_coord.lat - map.bottom_left_coord.lat),
         -90 * u.deg, 90 * u.deg
     )
 
-    blc_lon = map.bottom_left_coord.spherical.lon - 0.1 * (map.top_right_coord.spherical.lon - map.bottom_left_coord.spherical.lon)
-    trc_lon = map.top_right_coord.spherical.lon + 0.1 * (map.top_right_coord.spherical.lon - map.bottom_left_coord.spherical.lon)
-
     blc_ar_synop = change_obstime(
         SkyCoord(
-            Longitude(blc_lon),
-            Latitude(blc_lat),
-            frame='heliographic_stonyhurst',
-            representation_type='spherical',
-            obstime=map.date
+            lon=map.bottom_left_coord.lon - 0.1 * (map.top_right_coord.lon - map.bottom_left_coord.lon),
+            lat=blc_lat,
+            frame=map.coordinate_frame
         ).transform_to(new_frame),
         m_hmi_resample.date
     )
 
     trc_ar_synop = change_obstime(
         SkyCoord(
-            Longitude(trc_lon),
-            Latitude(trc_lat),
-            frame='heliographic_stonyhurst',
-            representation_type='spherical',
-            obstime=map.date
+            lon=map.top_right_coord.lon + 0.1 * (map.top_right_coord.lon - map.bottom_left_coord.lon),
+            lat=trc_lat,
+            frame=map.coordinate_frame
         ).transform_to(new_frame),
         m_hmi_resample.date
     )
@@ -304,9 +296,6 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
         
     # masked_pix_y, masked_pix_x = np.where((m_hmi_resample.data <=-7))
     # masked_pix_y, masked_pix_x = np.where((m_hmi_resample.data > 7))
-    
-    # Convert the masked pixel coordinates to world coordinates
-    seeds = m_hmi_resample.pixel_to_world(masked_pix_x*u.pix, masked_pix_y*u.pix,).make_3d()
     
     # Filter the seeds based on longitude and latitude ranges
     in_lon = np.logical_and(seeds.lon > blc_ar_synop.lon, seeds.lon < trc_ar_synop.lon)
@@ -342,7 +331,7 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     print(f"Total field lines: {len(fieldlines)}")
     print(f"Open field lines: {len(open_fieldlines)}")
     print(f"Closed field lines: {len(closed_fieldlines)}")
-    print("Map coordinate frame:", map.coordinate_frame)
+
     return open_fieldlines, closed_fieldlines
 
 
