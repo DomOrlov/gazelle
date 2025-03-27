@@ -238,25 +238,17 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     
     # Change the observer time and frame of the synoptic data
     new_frame = change_obstime_frame(m_hmi.coordinate_frame, map.date)
-    
-    # Resample the HMI data to a specific resolution
-    m_hmi_resample = m_hmi.resample(dimension*u.pix)
-    print("HMI Resampled Data Range:", np.min(m_hmi_resample.data), "to", np.max(m_hmi_resample.data))
-    new_frame = change_obstime_frame(m_hmi_resample.coordinate_frame, map.date)
-    # Expand the coordinates by 10% in each direction
-    blc_lat = np.clip(
-        map.bottom_left_coord.lat - 0.1 * (map.top_right_coord.lat - map.bottom_left_coord.lat),
-        -90 * u.deg, 90 * u.deg
-    )
-    trc_lat = np.clip(
-        map.top_right_coord.lat + 0.1 * (map.top_right_coord.lat - map.bottom_left_coord.lat),
-        -90 * u.deg, 90 * u.deg
-    )
 
+    # Resample the HMI data to a specific resolution
+    m_hmi_resample = m_hmi.resample(dimension * u.pix)
+
+    new_frame = change_obstime_frame(m_hmi_resample.coordinate_frame, map.date)
+
+    # Expand the coordinates by 10% in each direction
     blc_ar_synop = change_obstime(
         SkyCoord(
-            lon=map.bottom_left_coord.lon - 0.1 * (map.top_right_coord.lon - map.bottom_left_coord.lon),
-            lat=blc_lat,
+            map.bottom_left_coord.Tx - 0.1 * (map.top_right_coord.Tx - map.bottom_left_coord.Tx),
+            map.bottom_left_coord.Ty - 0.1 * (map.top_right_coord.Ty - map.bottom_left_coord.Ty),
             frame=map.coordinate_frame
         ).transform_to(new_frame),
         m_hmi_resample.date
@@ -264,8 +256,8 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
 
     trc_ar_synop = change_obstime(
         SkyCoord(
-            lon=map.top_right_coord.lon + 0.1 * (map.top_right_coord.lon - map.bottom_left_coord.lon),
-            lat=trc_lat,
+            map.top_right_coord.Tx + 0.1 * (map.top_right_coord.Tx - map.bottom_left_coord.Tx),
+            map.top_right_coord.Ty + 0.1 * (map.top_right_coord.Ty - map.bottom_left_coord.Ty),
             frame=map.coordinate_frame
         ).transform_to(new_frame),
         m_hmi_resample.date
