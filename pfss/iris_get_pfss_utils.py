@@ -322,7 +322,7 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
 
     for i, (f, seed_coord) in enumerate(zip(fieldlines, seeds)):
         # Convert seed world coordinate to pixel
-        pix = m_hmi_resample.wcs.world_to_pixel(seed_coord)
+        pix = m_hmi_resample.world_to_pixel(seed_coord)
         x, y = int(round(pix[0])), int(round(pix[1]))
         
         f.start_pix = (x, y)
