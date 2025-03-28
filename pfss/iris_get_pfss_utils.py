@@ -326,7 +326,9 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
         print(repr(seed_coord))
         pix = m_hmi_resample.world_to_pixel(SkyCoord(seed_coord))
 
-        x, y = int(round(pix[0])), int(round(pix[1]))
+        x = int(round(pix[0].to_value(u.pixel)))
+        y = int(round(pix[1].to_value(u.pixel)))
+
         
         f.start_pix = (x, y)
         
