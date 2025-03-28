@@ -312,6 +312,13 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     print('finished fieldlines')
     #return 
 
+    for fieldline, x_pix, y_pix in zip(fieldlines, masked_pix_x, masked_pix_y):
+        fieldline.start_pix = (x_pix, y_pix)
+        coords = fieldline.coords.cartesian.xyz.to_value().T
+        diffs = np.diff(coords, axis=0)
+        arc_length = np.sum(np.linalg.norm(diffs, axis=1))
+        fieldline.length = arc_length
+
     print('Separating field lines before classification')    
     open_lines = [f for f in fieldlines if f.is_open]
     closed_lines = [f for f in fieldlines if not f.is_open]
