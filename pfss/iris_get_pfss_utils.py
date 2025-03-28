@@ -320,15 +320,19 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     #    arc_length = np.sum(np.linalg.norm(diffs, axis=1))
     #    fieldline.length = arc_length
 
-    print("Adding seed metadata to fieldlines...")
-    for i, (f, x, y) in enumerate(zip(fieldlines, masked_pix_x, masked_pix_y)):
+    for i, (f, seed_coord) in enumerate(zip(fieldlines, seeds)):
+        # Convert seed world coordinate to pixel
+        pix = m_hmi_resample.wcs.world_to_pixel(seed_coord)
+        x, y = int(round(pix[0])), int(round(pix[1]))
+        
         f.start_pix = (y, x)
+        
         coords = f.coords.cartesian.xyz.to_value().T
         diffs = np.diff(coords, axis=0)
         f.length = np.sum(np.linalg.norm(diffs, axis=1))
 
-        if i < 10:  # Only show first 10 for brevity
-            print(f"[{i}] Original seed pixel: x = {x}, y = {y}")
+        if i < 10:
+            print(f"[{i}] Seed pixel: x = {x}, y = {y}")
             print(f"     Assigned start_pix: {f.start_pix}")
             print(f"     Loop Length: {f.length:.2e}")
 
