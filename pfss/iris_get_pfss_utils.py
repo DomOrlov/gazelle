@@ -312,13 +312,26 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     print('finished fieldlines')
     #return 
 
+    #print("Adding seed metadata to fieldlines...")
+    #for fieldline, x_pix, y_pix in zip(fieldlines, masked_pix_x, masked_pix_y):
+    #    fieldline.start_pix = (y_pix, x_pix)
+    #    coords = fieldline.coords.cartesian.xyz.to_value().T
+    #    diffs = np.diff(coords, axis=0)
+    #    arc_length = np.sum(np.linalg.norm(diffs, axis=1))
+    #    fieldline.length = arc_length
+
     print("Adding seed metadata to fieldlines...")
-    for fieldline, x_pix, y_pix in zip(fieldlines, masked_pix_x, masked_pix_y):
-        fieldline.start_pix = (y_pix, x_pix)
-        coords = fieldline.coords.cartesian.xyz.to_value().T
+    for i, (f, x, y) in enumerate(zip(fieldlines, masked_pix_x, masked_pix_y)):
+        f.start_pix = (y, x)
+        coords = f.coords.cartesian.xyz.to_value().T
         diffs = np.diff(coords, axis=0)
-        arc_length = np.sum(np.linalg.norm(diffs, axis=1))
-        fieldline.length = arc_length
+        f.length = np.sum(np.linalg.norm(diffs, axis=1))
+
+        if i < 10:  # Only show first 10 for brevity
+            print(f"[{i}] Original seed pixel: x = {x}, y = {y}")
+            print(f"     Assigned start_pix: {f.start_pix}")
+            print(f"     Loop Length: {f.length:.2e}")
+
 
     print('Separating field lines before classification')    
     open_lines = [f for f in fieldlines if f.is_open]
