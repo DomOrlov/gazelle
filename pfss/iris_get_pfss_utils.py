@@ -325,7 +325,7 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
         pix = m_hmi_resample.wcs.world_to_pixel(seed_coord)
         x, y = int(round(pix[0])), int(round(pix[1]))
         
-        f.start_pix = (y, x)
+        f.start_pix = (x, y)
         
         coords = f.coords.cartesian.xyz.to_value().T
         diffs = np.diff(coords, axis=0)
@@ -348,6 +348,13 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     print(f"Total field lines: {len(fieldlines)}")
     print(f"Open field lines: {len(open_fieldlines)}")
     print(f"Closed field lines: {len(closed_fieldlines)}")
+
+    # Quick diagnostic: check spread of pixel coordinates
+    ys = [f.start_pix[1] for f in closed_fieldlines if hasattr(f, 'start_pix')]
+    xs = [f.start_pix[0] for f in closed_fieldlines if hasattr(f, 'start_pix')]
+
+    print(f"Y: min {min(ys)}, max {max(ys)}, median {np.median(ys)}")
+    print(f"X: min {min(xs)}, max {max(xs)}, median {np.median(xs)}")
 
     return open_fieldlines, closed_fieldlines
 
