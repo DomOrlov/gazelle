@@ -319,27 +319,20 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     #    diffs = np.diff(coords, axis=0)
     #    arc_length = np.sum(np.linalg.norm(diffs, axis=1))
     #    fieldline.length = arc_length
-
+    ny, nx = map.data.shape  # Get EIS pixel dimensions (rows, cols) to align seeds correctly
     for i, (f, seed_coord) in enumerate(zip(fieldlines, seeds)):
-        # Convert seed world coordinate to pixel
         print(type(seed_coord))
         print(repr(seed_coord))
-        pix = m_hmi_resample.world_to_pixel(SkyCoord(seed_coord))
-
-        x = int(round(pix[0].to_value(u.pixel)))
-        y = int(round(pix[1].to_value(u.pixel)))
-
+        # We seeded from EIS pixels directly, so preserve those
+        f.start_pix = (i % nx, i // nx)  # i is index in flattened 2D grid so we isnert a seed into every singel eis pixel
         
-        f.start_pix = (x, y)
-        
-        coords = f.coords.cartesian.xyz.to_value().T
-        diffs = np.diff(coords, axis=0)
-        f.length = np.sum(np.linalg.norm(diffs, axis=1))
-
-        if i < 10:
-            print(f"[{i}] Seed pixel: x = {x}, y = {y}")
-            print(f"     Assigned start_pix: {f.start_pix}")
-            print(f"     Loop Length: {f.length:.2e}")
+        coords = f.coords.cartesian.xyz.to_value().T # Convert 3D coordinates to Nx3 array
+        diffs = np.diff(coords, axis=0) # Stepwise differences between points along the line
+        f.length = np.sum(np.linalg.norm(diffs, axis=1)) # Arc length of the field line via Euclidean distance
+        #if i < 10:
+        #    print(f"[{i}] Seed pixel: x = {x}, y = {y}")
+        #    print(f"     Assigned start_pix: {f.start_pix}")
+        #    print(f"     Loop Length: {f.length:.2e}")
 
 
     print('Separating field lines before classification')    
