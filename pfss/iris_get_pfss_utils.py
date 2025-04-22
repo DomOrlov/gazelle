@@ -319,13 +319,17 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     #    diffs = np.diff(coords, axis=0)
     #    arc_length = np.sum(np.linalg.norm(diffs, axis=1))
     #    fieldline.length = arc_length
-    ny, nx = map.data.shape  # Get EIS pixel dimensions (rows, cols) to align seeds correctly
+    #ny, nx = map.data.shape  # Get EIS pixel dimensions (rows, cols) to align seeds correctly
+    #for i, (f, seed_coord) in enumerate(zip(fieldlines, seeds)):
+    #    f.start_pix = (i % nx, i // nx)  # i is index in flattened 2D grid so we isnert a seed into every singel eis pixel
+
+
+    xx, yy = np.meshgrid(np.arange(nx), np.arange(ny))
+    flat_x = xx.ravel()
+    flat_y = yy.ravel()
     for i, (f, seed_coord) in enumerate(zip(fieldlines, seeds)):
-        print(type(seed_coord))
-        print(repr(seed_coord))
-        # We seeded from EIS pixels directly, so preserve those
-        f.start_pix = (i % nx, i // nx)  # i is index in flattened 2D grid so we isnert a seed into every singel eis pixel
-        
+        f.start_pix = (flat_x[i], flat_y[i])
+
         coords = f.coords.cartesian.xyz.to_value().T # Convert 3D coordinates to Nx3 array
         diffs = np.diff(coords, axis=0) # Stepwise differences between points along the line
         f.length = np.sum(np.linalg.norm(diffs, axis=1)) # Arc length of the field line via Euclidean distance
