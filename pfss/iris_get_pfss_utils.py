@@ -319,7 +319,7 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     #    diffs = np.diff(coords, axis=0)
     #    arc_length = np.sum(np.linalg.norm(diffs, axis=1))
     #    fieldline.length = arc_length
-    #ny, nx = map.data.shape  # Get EIS pixel dimensions (rows, cols) to align seeds correctly
+    ny, nx = map.data.shape  # Get EIS pixel dimensions (rows, cols) to align seeds correctly
     #for i, (f, seed_coord) in enumerate(zip(fieldlines, seeds)):
     #    f.start_pix = (i % nx, i // nx)  # i is index in flattened 2D grid so we isnert a seed into every singel eis pixel
 
