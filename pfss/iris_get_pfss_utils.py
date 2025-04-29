@@ -381,6 +381,7 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     x_vals = x_pix.value
     y_vals = y_pix.value
     valid = np.isfinite(x_vals) & np.isfinite(y_vals)
+    print(f"Skipped {np.count_nonzero(~valid)} fieldlines due to invalid pixel mapping.")
     valid_fieldlines = np.array(fieldlines)[valid]
     #for f, x, y in zip(fieldlines, x_pix, y_pix):
     #    print(x, x.unit)
