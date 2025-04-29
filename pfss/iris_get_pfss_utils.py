@@ -379,7 +379,10 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     )
     x_pix, y_pix = map.world_to_pixel(seeds_2d)
     for f, x, y in zip(fieldlines, x_pix, y_pix):
-        f.start_pix = (int(x), int(y))  # or round(x), round(y) if needed
+        print(x, x.unit)
+        print(y, y.unit)
+        #f.start_pix = (int(x), int(y))  # or round(x), round(y) if needed
+        f.start_pix = (int(x.value), int(y.value))
         coords = f.coords.cartesian.xyz.to_value().T # Convert 3D coordinates to Nx3 array, one row per step along the fieldline, which is exactly what is needed to compute distances between steps.
         diffs = np.diff(coords, axis=0) # Stepwise differences between points along the line
         f.length = np.sum(np.linalg.norm(diffs, axis=1)) # Arc length of the field line via Euclidean distance
