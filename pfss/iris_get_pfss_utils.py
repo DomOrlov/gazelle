@@ -212,45 +212,51 @@ def plot_context_pfss(eis_map):
     plt.show()
     
 def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 540)):
-
-    print("Min Gauss:", min_gauss, "Max Gauss:", max_gauss)
-
-    # Create date_time_obj for get_closest_aia
-    date_time_obj = map.date.datetime
-    aia_map = get_closest_aia(date_time_obj)
     
-    hp_lon = np.linspace(map.bottom_left_coord.Tx/u.arcsec, map.top_right_coord.Tx/u.arcsec, round(len(map.data[0,:]))) * u.arcsec
-    hp_lat = np.linspace(map.bottom_left_coord.Ty/u.arcsec, map.top_right_coord.Ty/u.arcsec, round(len(map.data[0,::]))) * u.arcsec
-    
+    map.plot()
+    plt.title("Raw EIS Map")
+    plt.show() # This is the region of interest, the EIS map, that we want to trace fieldlines.
 
-
-    # Make a 2D grid from these 1D points
-    lon, lat = np.meshgrid(hp_lon, hp_lat)
-
-    seeds = SkyCoord(lon.ravel(), lat.ravel(),
-                     frame=map.coordinate_frame).make_3d()
-
+    # hmi synoptic maps provide a global magentic map of the sun to trace fieldlines
     m_hmi = hmi_daily_download(map.date.value)
-    
+
+    m_hmi.plot()
+    plt.title("Raw HMI Magnetogram")
+    plt.show() # Confirms it covers the area of interest.
+
     # Define functions to change the observer time and frame
-    change_obstime = lambda x,y: SkyCoord(x.replicate(observer=x.observer.replicate(obstime=y), obstime=y))
-    change_obstime_frame = lambda x,y: x.replicate_without_data(observer=x.observer.replicate(obstime=y), obstime=y)
+    change_obstime = lambda x,y: SkyCoord( # x original Skycoord, y = new time
+        x.replicate( # makes a copy of x
+            observer=x.observer.replicate(obstime=y), # takes original observer and makes a copy of it with a new time, y.
+            obstime=y # sets the new time for the copy of x
+        )
+    )
+    change_obstime_frame = lambda x,y: x.replicate_without_data( #original frame, y = new time
+        observer=x.observer.replicate(obstime=y), # Makes a copy of the frame without copying any coordinate data inside.
+        obstime=y
+    )
     
-    # Change the observer time and frame of the synoptic data
+    # Synchronize the original HMI magnetogram frame to EIS observation time
     new_frame = change_obstime_frame(m_hmi.coordinate_frame, map.date)
 
     # Resample the HMI data to a specific resolution
-    m_hmi_resample = m_hmi.resample(dimension * u.pix)
+    m_hmi_resample = m_hmi.resample(dimension * u.pix) # .resample changes the number of pixels in the map, and stretching/compressing the coordinate system to match the new pixel size.
 
+    m_hmi_resample.plot()
+    plt.title("Resampled HMI Magnetogram")
+    plt.show() # Check that resampling didn't distort or lose critical details, if it matches better the EIS map scale (pixels).
+
+    # Synchronize again guaranteeing that the HMI data is in the same frame as the EIS map.
     new_frame = change_obstime_frame(m_hmi_resample.coordinate_frame, map.date)
 
-    # Expand the coordinates by 10% in each direction
+    # Expand the coordinates by 10% in each direction, ensures you don’t accidentally miss important fieldlines touching the edges.
+    # Magnetic fields often curve outward, fieldlines that start near the edge might still be important.
     blc_ar_synop = change_obstime(
         SkyCoord(
             map.bottom_left_coord.Tx - 0.1 * (map.top_right_coord.Tx - map.bottom_left_coord.Tx),
             map.bottom_left_coord.Ty - 0.1 * (map.top_right_coord.Ty - map.bottom_left_coord.Ty),
             frame=map.coordinate_frame
-        ).transform_to(new_frame),
+        ).transform_to(new_frame), # transform the coordinate to the new magnetogram frame.
         m_hmi_resample.date
     )
 
@@ -263,103 +269,91 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
         m_hmi_resample.date
     )
 
-
-    # masked_pix_y, masked_pix_x = np.where((m_hmi_resample.data > 10) | (m_hmi_resample.data < 10))
-    # seeds = m_hmi_resample.pixel_to_world(masked_pix_x*u.pix, masked_pix_y*u.pix,).make_3d()
-
-    # Find the masked pixels based on a condition
-    masked_pix_y, masked_pix_x = np.where((m_hmi_resample.data >=max_gauss) | (m_hmi_resample.data < min_gauss))
+    # Select pixels that are either above or below the gauss values, these pixels will be used as seed points for PFSS fieldline tracing.
+    masked_pix_y, masked_pix_x = np.where((m_hmi_resample.data >=max_gauss) | (m_hmi_resample.data < min_gauss)) # np.where returns the (row, column) indices (masked_pix_y, masked_pix_x) of the selected pixels.
 
     print(f"Number of masked pixels: {len(masked_pix_x)}")
-    
     print("Filtered Values:")
     print(m_hmi_resample.data[masked_pix_y, masked_pix_x])
 
+    plt.hist(m_hmi_resample.data[masked_pix_y, masked_pix_x].flatten(), bins=50)
+    plt.title("Histogram of Magnetic Field Strengths of Masked Pixels")
+    plt.xlabel("Magnetic Field Strength (Gauss)")
+    plt.ylabel("Number of Pixels")
+    plt.grid(True)
+    plt.show() # Checks the distribution of field strengths among selected seeds.
 
-
-
+    # Convert the masked strong-field pixel positions (masked_pix_x, masked_pix_y) into real-world solar coordinates (longitude, latitude).
     seeds = m_hmi_resample.pixel_to_world(masked_pix_x*u.pix, masked_pix_y*u.pix,).make_3d()
+
+    plt.figure(figsize=(8,6))
+    plt.scatter(seeds.lon.to(u.deg), seeds.lat.to(u.deg), s=1, c='r')
+    plt.title("Initial Seeds Before FOV Filtering")
+    plt.xlabel("Solar Longitude (deg)")
+    plt.ylabel("Solar Latitude (deg)")
+    plt.grid(True)
+    plt.show() # Checks that strong-field seeds are planted everywhere there should be magnetic activity.
+
     print(f"Number of initial seed points: {len(seeds)}")
 
+    # Selects seeds based on if they reside within our HMI magnetogram FOV (+10%).
     in_lon = np.logical_and(seeds.lon > blc_ar_synop.lon, seeds.lon < trc_ar_synop.lon)
     in_lat = np.logical_and(seeds.lat > blc_ar_synop.lat, seeds.lat < trc_ar_synop.lat)
+    # Filters based on the previous set HMI magnetogram FOV, only keeping the seeds that are within the FOV.
     seeds = seeds[np.where(np.logical_and(in_lon, in_lat))]
+    plt.figure(figsize=(8,6))
+    plt.scatter(seeds.lon.to(u.deg), seeds.lat.to(u.deg), s=1, c='b')
+    plt.title("Seeds After FOV Filtering (EIS area)")
+    plt.xlabel("Solar Longitude (deg)")
+    plt.ylabel("Solar Latitude (deg)")
+    plt.grid(True)
+    plt.show() # Confirm that after masking, seeds correspond only to the EIS field-of-view (plus 10% buffer).
     print(f"Number of seeds after FOV filtering: {len(seeds)}")
-        
-    # masked_pix_y, masked_pix_x = np.where((m_hmi_resample.data <=-7))
-    # masked_pix_y, masked_pix_x = np.where((m_hmi_resample.data > 7))
     
-    # Filter the seeds based on longitude and latitude ranges
-    in_lon = np.logical_and(seeds.lon > blc_ar_synop.lon, seeds.lon < trc_ar_synop.lon)
-    in_lat = np.logical_and(seeds.lat > blc_ar_synop.lat, seeds.lat < trc_ar_synop.lat)
-    seeds = seeds[np.where(np.logical_and(in_lon, in_lat))]
+    nrho = 70 # Number of radial grid points(steps form solar surface to source surface, like resolution).
+    rss = 2.5  # Source surface radius (in solar radii, where the fieldlines are traced to, boundary condition for the model).
+    pfss_input = pfsspy.Input(m_hmi_resample, nrho, rss) # .Input tell pfsspy what magentogram to use what radial grid to use and where to place the source surface.
+    pfss_output = pfsspy.pfss(pfss_input) # .pfss solves the pfss problom and outputs a solution.
     
-    print("Processing PFSS...")
-    nrho = 70
-    rss = 2.5
-    pfss_input = pfsspy.Input(m_hmi_resample, nrho, rss)
-    pfss_output = pfsspy.pfss(pfss_input)
-    
-    print("PFSS Done, Tracing Fieldlines...")
-    ds = 0.01
-    print('processing max_steps')    
-    max_steps = int(np.ceil(10 * nrho / ds))
-    print('processing tracer')
-    tracer = pfsspy.tracing.FortranTracer(step_size=ds, max_steps=max_steps)
-    # tracer = pfsspy.tracing.FortranTracer(max_steps=max_steps)
+    ds = 0.01 # Step size for fieldline tracing (Each tracing step moves the fieldline by 0.01 R☉ before recalculating direction).
+    max_steps = int(np.ceil(10 * nrho / ds)) # .ceil rounds to the nearest integer, this computes a maximum number of steps that guarantees a fieldline can reach the top (2.5 R☉) or bottom (1 R☉) without runnin g out of steps.
+    tracer = pfsspy.tracing.FortranTracer(step_size=ds, max_steps=max_steps) # Initialize a tracer to follow magnetic fieldlines step-by-step through the solved PFSS field.
     print('processing fieldlines')
-    fieldlines = tracer.trace(SkyCoord(seeds), pfss_output,)
-    print('finished fieldlines')
-    #return 
+    fieldlines = tracer.trace(SkyCoord(seeds), pfss_output,) # .trace takes list of seed starting points, takes magentic field solution, tracing the fieldlines starting at each seed point.
+    # Fieldline reaches the source surface (2.5) = open fieldline. Fieldline reaches the solar surface (1) = closed fieldline. The fieldline hits max_steps and is forcibly stopped.
+    
+    footpoints_lon = [f.coords.lon[0].to(u.deg).value for f in fieldlines]
+    footpoints_lat = [f.coords.lat[0].to(u.deg).value for f in fieldlines]
+
+    plt.figure(figsize=(8,6))
+    plt.scatter(footpoints_lon, footpoints_lat, s=1, c='g')
+    plt.title("Fieldline Starting Footpoints After Tracing")
+    plt.xlabel("Solar Longitude (deg)")
+    plt.ylabel("Solar Latitude (deg)")
+    plt.grid(True)
+    plt.show() # Confirms that fieldlines were successfully traced from the seeds.
 
     print("Adding seed metadata to fieldlines...")
-    #for fieldline, x_pix, y_pix in zip(fieldlines, masked_pix_x, masked_pix_y):
-    #    fieldline.start_pix = (y_pix, x_pix)
-    #    coords = fieldline.coords.cartesian.xyz.to_value().T
-    #    diffs = np.diff(coords, axis=0)
-    #    arc_length = np.sum(np.linalg.norm(diffs, axis=1))
-    #    fieldline.length = arc_length
-    ny, nx = map.data.shape  # Get EIS pixel dimensions (rows, cols) to align seeds correctly
-    #for i, (f, seed_coord) in enumerate(zip(fieldlines, seeds)):
-    #    f.start_pix = (i % nx, i // nx)  # i is index in flattened 2D grid so we isnert a seed into every singel eis pixel
-
-
-    xx, yy = np.meshgrid(np.arange(nx), np.arange(ny))
-    flat_x = xx.ravel()
-    flat_y = yy.ravel()
-    for i, (f, seed_coord) in enumerate(zip(fieldlines, seeds)):
-        f.start_pix = (flat_x[i], flat_y[i])
-
-        coords = f.coords.cartesian.xyz.to_value().T # Convert 3D coordinates to Nx3 array
+    ny, nx = map.data.shape  # map.data is the 2D intensity array from the EIS raster, .shape gives number of rows and columns, 
+    xx, yy = np.meshgrid(np.arange(nx), np.arange(ny)) # .arange creates a 1D array of integers, .meshgrid takes two 1D arrays and creates a 2D coordinate grid,.
+    flat_x = xx.ravel() # .ravel() flattens a 2D array into a 1D array.
+    flat_y = yy.ravel() # To attach pixel coordinates correctly to fieldlines, you need the pixel grid in 1D as well, in matching order.
+    for i, (f, seed_coord) in enumerate(zip(fieldlines, seeds)): #zip takes two lists and combines them into a list of tuples, enumerate gives an index to each tuple.
+        f.start_pix = (flat_x[i], flat_y[i]) # Assigns the EIS pixel (x, y) where this fieldline was seeded from.
+        coords = f.coords.cartesian.xyz.to_value().T # Convert 3D coordinates to Nx3 array, one row per step along the fieldline, which is exactly what is needed to compute distances between steps.
         diffs = np.diff(coords, axis=0) # Stepwise differences between points along the line
         f.length = np.sum(np.linalg.norm(diffs, axis=1)) # Arc length of the field line via Euclidean distance
-        #if i < 10:
-        #    print(f"[{i}] Seed pixel: x = {x}, y = {y}")
-        #    print(f"     Assigned start_pix: {f.start_pix}")
-        #    print(f"     Loop Length: {f.length:.2e}")
 
+    open_lines = [f for f in fieldlines if f.is_open] # For each fieldline f in fieldlines, check if f.is_open == True, if yes add to open_lines
+    closed_lines = [f for f in fieldlines if not f.is_open] # For each fieldline f in fieldlines, check if f.is_open == False, if yes add to closed_lines
 
-    print('Separating field lines before classification')    
-    open_lines = [f for f in fieldlines if f.is_open]
-    closed_lines = [f for f in fieldlines if not f.is_open]
-
-    print('Create OpenFieldLines and ClosedFieldLines only with valid lines')
-    open_fieldlines = OpenFieldLines(open_lines) if open_lines else OpenFieldLines([])
-    closed_fieldlines = ClosedFieldLines(closed_lines) if closed_lines else ClosedFieldLines([])
+    open_fieldlines = OpenFieldLines(open_lines) if open_lines else OpenFieldLines([]) # If open_lines is not empty, create OpenFieldLines object, else create an empty one.
+    closed_fieldlines = ClosedFieldLines(closed_lines) if closed_lines else ClosedFieldLines([]) # If closed_lines is not empty, create ClosedFieldLines object, else create an empty one.
 
     print(f"Total field lines: {len(fieldlines)}")
     print(f"Open field lines: {len(open_fieldlines)}")
     print(f"Closed field lines: {len(closed_fieldlines)}")
-
-    # Quick diagnostic: check spread of pixel coordinates
-    ys = [f.start_pix[1] for f in closed_fieldlines if hasattr(f, 'start_pix')]
-    xs = [f.start_pix[0] for f in closed_fieldlines if hasattr(f, 'start_pix')]
-
-    print(f"Y: min {min(ys)}, max {max(ys)}, median {np.median(ys)}")
-    print(f"X: min {min(xs)}, max {max(xs)}, median {np.median(xs)}")
-
     return open_fieldlines, closed_fieldlines
-
 
 
 
