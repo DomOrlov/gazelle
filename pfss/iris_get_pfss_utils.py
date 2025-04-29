@@ -381,11 +381,12 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     x_vals = x_pix.value
     y_vals = y_pix.value
     valid = np.isfinite(x_vals) & np.isfinite(y_vals)
+    valid_fieldlines = np.array(fieldlines)[valid]
     #for f, x, y in zip(fieldlines, x_pix, y_pix):
     #    print(x, x.unit)
     #    print(y, y.unit)
     # Only loop over valid values
-    for f, x, y in zip(np.array(fieldlines)[valid], x_vals[valid], y_vals[valid]):
+    for f, x, y in zip(valid_fieldlines, x_vals[valid], y_vals[valid]):
         f.start_pix = (int(x), int(y))
         #f.start_pix = (int(x.value), int(y.value))
         coords = f.coords.cartesian.xyz.to_value().T # Convert 3D coordinates to Nx3 array, one row per step along the fieldline, which is exactly what is needed to compute distances between steps.
@@ -395,8 +396,8 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     # Plot to verify that start_pix aligns with EIS data
     plt.figure(figsize=(6, 10))
     plt.imshow(map.data, origin='lower', cmap='gray', aspect='auto')
-    x_pix = [f.start_pix[0] for f in fieldlines]
-    y_pix = [f.start_pix[1] for f in fieldlines]
+    x_pix = [f.start_pix[0] for f in valid_fieldlines]
+    y_pix = [f.start_pix[1] for f in valid_fieldlines]
     plt.scatter(x_pix, y_pix, s=2, color='cyan', label='start_pix')
     plt.title("EIS Raster with Fieldline Start Pixels (start_pix)")
     plt.xlabel("X Pixel")
