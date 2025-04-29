@@ -373,6 +373,19 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
         diffs = np.diff(coords, axis=0) # Stepwise differences between points along the line
         f.length = np.sum(np.linalg.norm(diffs, axis=1)) # Arc length of the field line via Euclidean distance
 
+    # Plot to verify that start_pix aligns with EIS data
+    plt.figure(figsize=(6, 10))
+    plt.imshow(map.data, origin='lower', cmap='gray', aspect='auto')
+    x_pix = [f.start_pix[0] for f in fieldlines]
+    y_pix = [f.start_pix[1] for f in fieldlines]
+    plt.scatter(x_pix, y_pix, s=2, color='cyan', label='start_pix')
+    plt.title("EIS Raster with Fieldline Start Pixels (start_pix)")
+    plt.xlabel("X Pixel")
+    plt.ylabel("Y Pixel")
+    plt.legend()
+    plt.grid(True)
+    plt.show() # Shows whether the fieldlines actually map back to EIS data in the correct orientation.
+
     open_lines = [f for f in fieldlines if f.is_open] # For each fieldline f in fieldlines, check if f.is_open == True, if yes add to open_lines
     closed_lines = [f for f in fieldlines if not f.is_open] # For each fieldline f in fieldlines, check if f.is_open == False, if yes add to closed_lines
 
