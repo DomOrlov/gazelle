@@ -29,6 +29,7 @@ from astropy.wcs import WCS
 from astropy.visualization import ImageNormalize, SqrtStretch
 from matplotlib.colors import LogNorm
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+from matplotlib.patches import Rectangle
 
 warnings.filterwarnings('ignore')
 
@@ -289,8 +290,9 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     plt.figure(figsize=(8,6))
     plt.scatter(seeds.lon.to(u.deg), seeds.lat.to(u.deg), s=1, c='r')
     plt.title("Initial Seeds Before FOV Filtering")
-    plt.xlabel("Solar Longitude (deg)")
-    plt.ylabel("Solar Latitude (deg)")
+    plt.xlabel("Carrington Longitude (deg)")
+    plt.ylabel("Carrington Latitude (deg)")
+
     plt.grid(True)
     plt.show() # Checks that strong-field seeds are planted everywhere there should be magnetic activity.
 
@@ -304,8 +306,25 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     plt.figure(figsize=(8,6))
     plt.scatter(seeds.lon.to(u.deg), seeds.lat.to(u.deg), s=1, c='b')
     plt.title("Seeds After FOV Filtering (EIS area)")
-    plt.xlabel("Solar Longitude (deg)")
-    plt.ylabel("Solar Latitude (deg)")
+    plt.xlabel("Carrington Longitude (deg)")
+    plt.ylabel("Carrington Latitude (deg)")
+
+    # Add rectangle to show the EIS FOV (in Carrington coordinates)
+    lon_min = blc_ar_synop.lon.deg
+    lon_max = trc_ar_synop.lon.deg
+    lat_min = blc_ar_synop.lat.deg
+    lat_max = trc_ar_synop.lat.deg
+    plt.gca().add_patch(Rectangle(
+        (lon_min, lat_min),
+        lon_max - lon_min,
+        lat_max - lat_min,
+        edgecolor='orange',
+        facecolor='none',
+        lw=2,
+        label='EIS FOV'
+    ))
+
+    plt.legend()
     plt.grid(True)
     plt.show() # Confirm that after masking, seeds correspond only to the EIS field-of-view (plus 10% buffer).
     print(f"Number of seeds after FOV filtering: {len(seeds)}")
@@ -329,8 +348,17 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     plt.figure(figsize=(8,6))
     plt.scatter(footpoints_lon, footpoints_lat, s=1, c='g')
     plt.title("Fieldline Starting Footpoints After Tracing")
-    plt.xlabel("Solar Longitude (deg)")
-    plt.ylabel("Solar Latitude (deg)")
+    plt.gca().add_patch(Rectangle(
+        (lon_min, lat_min),
+        lon_max - lon_min,
+        lat_max - lat_min,
+        edgecolor='orange',
+        facecolor='none',
+        lw=2,
+        label='EIS FOV'
+    ))
+    plt.legend()
+
     plt.grid(True)
     plt.show() # Confirms that fieldlines were successfully traced from the seeds.
 
