@@ -370,13 +370,14 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     #for i, (f, seed_coord) in enumerate(zip(fieldlines, seeds)): #zip takes two lists and combines them into a list of tuples, enumerate gives an index to each tuple.
     #    f.start_pix = (flat_x[i], flat_y[i]) # Assigns the EIS pixel (x, y) where this fieldline was seeded from.
     # Convert seed world coordinates directly to EIS pixel coordinates
-    seeds_2d = SkyCoord(
-        seeds.lon,
-        seeds.lat,
-        frame="helioprojective",
-        obstime=map.date,
-        observer=map.observer_coordinate
-    )
+    #seeds_2d = SkyCoord(
+    #    seeds.lon,
+    #    seeds.lat,
+    #    frame="helioprojective",
+    #    obstime=map.date,
+    #    observer=map.observer_coordinate
+    #)
+    seeds_2d = seeds.transform_to(map.coordinate_frame)
     x_pix, y_pix = map.world_to_pixel(seeds_2d)
     x_vals = x_pix.value
     y_vals = y_pix.value
