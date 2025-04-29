@@ -370,7 +370,8 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     #for i, (f, seed_coord) in enumerate(zip(fieldlines, seeds)): #zip takes two lists and combines them into a list of tuples, enumerate gives an index to each tuple.
     #    f.start_pix = (flat_x[i], flat_y[i]) # Assigns the EIS pixel (x, y) where this fieldline was seeded from.
     # Convert seed world coordinates directly to EIS pixel coordinates
-    x_pix, y_pix = map.world_to_pixel(seeds)
+    seeds_2d = SkyCoord(seeds.lon, seeds.lat, frame=seeds.frame)
+    x_pix, y_pix = map.world_to_pixel(seeds_2d)
     for f, x, y in zip(fieldlines, x_pix, y_pix):
         f.start_pix = (int(x), int(y))  # or round(x), round(y) if needed
         coords = f.coords.cartesian.xyz.to_value().T # Convert 3D coordinates to Nx3 array, one row per step along the fieldline, which is exactly what is needed to compute distances between steps.
