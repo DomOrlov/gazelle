@@ -365,10 +365,14 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     print("Adding seed metadata to fieldlines...")
     ny, nx = map.data.shape  # map.data is the 2D intensity array from the EIS raster, .shape gives number of rows and columns, 
     xx, yy = np.meshgrid(np.arange(nx), np.arange(ny)) # .arange creates a 1D array of integers, .meshgrid takes two 1D arrays and creates a 2D coordinate grid,.
-    flat_x = xx.ravel() # .ravel() flattens a 2D array into a 1D array.
-    flat_y = yy.ravel() # To attach pixel coordinates correctly to fieldlines, you need the pixel grid in 1D as well, in matching order.
-    for i, (f, seed_coord) in enumerate(zip(fieldlines, seeds)): #zip takes two lists and combines them into a list of tuples, enumerate gives an index to each tuple.
-        f.start_pix = (flat_x[i], flat_y[i]) # Assigns the EIS pixel (x, y) where this fieldline was seeded from.
+    #flat_x = xx.ravel() # .ravel() flattens a 2D array into a 1D array.
+    #flat_y = yy.ravel() # To attach pixel coordinates correctly to fieldlines, you need the pixel grid in 1D as well, in matching order.
+    #for i, (f, seed_coord) in enumerate(zip(fieldlines, seeds)): #zip takes two lists and combines them into a list of tuples, enumerate gives an index to each tuple.
+    #    f.start_pix = (flat_x[i], flat_y[i]) # Assigns the EIS pixel (x, y) where this fieldline was seeded from.
+    # Convert seed world coordinates directly to EIS pixel coordinates
+    x_pix, y_pix = map.world_to_pixel(seeds)
+    for f, x, y in zip(fieldlines, x_pix, y_pix):
+        f.start_pix = (int(x), int(y))  # or round(x), round(y) if needed
         coords = f.coords.cartesian.xyz.to_value().T # Convert 3D coordinates to Nx3 array, one row per step along the fieldline, which is exactly what is needed to compute distances between steps.
         diffs = np.diff(coords, axis=0) # Stepwise differences between points along the line
         f.length = np.sum(np.linalg.norm(diffs, axis=1)) # Arc length of the field line via Euclidean distance
