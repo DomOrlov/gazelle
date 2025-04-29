@@ -377,7 +377,11 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     #    obstime=map.date,
     #    observer=map.observer_coordinate
     #)
+    print("Seed type:", type(seeds))
+    print("Seed frame before transform:", seeds.frame.name)
     seeds_2d = seeds.transform_to(map.coordinate_frame)
+    print("Seed type after transform:", type(seeds_2d))
+    print("Seed frame after transform:", seeds_2d.frame.name)
     x_pix, y_pix = map.world_to_pixel(seeds_2d)
     x_vals = x_pix.value
     y_vals = y_pix.value
