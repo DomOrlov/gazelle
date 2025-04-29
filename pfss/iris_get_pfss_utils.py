@@ -322,8 +322,9 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     fieldlines = tracer.trace(SkyCoord(seeds), pfss_output,) # .trace takes list of seed starting points, takes magentic field solution, tracing the fieldlines starting at each seed point.
     # Fieldline reaches the source surface (2.5) = open fieldline. Fieldline reaches the solar surface (1) = closed fieldline. The fieldline hits max_steps and is forcibly stopped.
     
-    footpoints_lon = [f.coords.lon[0].to(u.deg).value for f in fieldlines]
-    footpoints_lat = [f.coords.lat[0].to(u.deg).value for f in fieldlines]
+    footpoints_lon = [f.coords.lon[0].to(u.deg).value for f in fieldlines if len(f.coords.lon) > 0]
+    footpoints_lat = [f.coords.lat[0].to(u.deg).value for f in fieldlines if len(f.coords.lat) > 0]
+
 
     plt.figure(figsize=(8,6))
     plt.scatter(footpoints_lon, footpoints_lat, s=1, c='g')
