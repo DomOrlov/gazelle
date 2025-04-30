@@ -250,6 +250,15 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     # Synchronize again guaranteeing that the HMI data is in the same frame as the EIS map.
     new_frame = change_obstime_frame(m_hmi_resample.coordinate_frame, map.date)
 
+    print("===== FRAME COMPARISON =====")
+    print("EIS observer:", map.observer_coordinate)
+    print("EIS obstime:", map.date)
+    print("HMI observer:", m_hmi_resample.observer_coordinate)
+    print("HMI obstime:", m_hmi_resample.date)
+    print("EIS coordinate frame:", map.coordinate_frame)
+    print("HMI coordinate frame:", m_hmi_resample.coordinate_frame)
+    print("============================")
+
     # Expand the coordinates by 10% in each direction, ensures you don’t accidentally miss important fieldlines touching the edges.
     # Magnetic fields often curve outward, fieldlines that start near the edge might still be important.
     blc_ar_synop = change_obstime(
@@ -363,39 +372,20 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     plt.show() # Confirms that fieldlines were successfully traced from the seeds.
 
     print("Adding seed metadata to fieldlines...")
-    ny, nx = map.data.shape  # map.data is the 2D intensity array from the EIS raster, .shape gives number of rows and columns, 
-    xx, yy = np.meshgrid(np.arange(nx), np.arange(ny)) # .arange creates a 1D array of integers, .meshgrid takes two 1D arrays and creates a 2D coordinate grid,.
-    #flat_x = xx.ravel() # .ravel() flattens a 2D array into a 1D array.
-    #flat_y = yy.ravel() # To attach pixel coordinates correctly to fieldlines, you need the pixel grid in 1D as well, in matching order.
-    #for i, (f, seed_coord) in enumerate(zip(fieldlines, seeds)): #zip takes two lists and combines them into a list of tuples, enumerate gives an index to each tuple.
-    #    f.start_pix = (flat_x[i], flat_y[i]) # Assigns the EIS pixel (x, y) where this fieldline was seeded from.
-    # Convert seed world coordinates directly to EIS pixel coordinates
-    #seeds_2d = SkyCoord(
-    #    seeds.lon,
-    #    seeds.lat,
-    #    frame="helioprojective",
-    #    obstime=map.date,
-    #    observer=map.observer_coordinate
-    #)
-    #print("Seed type:", type(seeds))
-    #print("Seed frame before transform:", seeds.frame.name)
-    seeds = SkyCoord(seeds)
-    seeds_2d = seeds.transform_to(map.coordinate_frame)
-    #print("Seed type after transform:", type(seeds_2d))
-    #print("Seed frame after transform:", seeds_2d.frame.name)
-    x_pix, y_pix = map.world_to_pixel(seeds_2d)
-    x_vals = x_pix.value
-    y_vals = y_pix.value
-    valid = np.isfinite(x_vals) & np.isfinite(y_vals)
+    print("Seed frame before transformation:", seeds.frame.name)
+    print("Map frame (EIS):", map.coordinate_frame)
+    print("Sample seed Carrington lon/lat before transform:", seeds[0].lon.deg, seeds[0].lat.deg)
+    seeds = SkyCoord(seeds) # Ensure seeds are full SkyCoord objects (not just frame instances) to enable transformation and pixel mapping.
+    seeds_2d = seeds.transform_to(map.coordinate_frame) # Convert seed coordinates to the 2D helioprojective frame of the EIS map.
+    print("Sample seed Solar-X/Y after transform:", seeds_2d[0].Tx.to(u.arcsec), seeds_2d[0].Ty.to(u.arcsec))
+    x_pix, y_pix = map.world_to_pixel(seeds_2d) # Map each transformed seed coordinate to its corresponding (x, y) pixel location on the EIS image.
+    x_vals = x_pix.value # Extract raw pixel values from astropy Quantity objects.
+    y_vals = y_pix.value 
+    valid = np.isfinite(x_vals) & np.isfinite(y_vals) # Identify seeds with valid pixel mappings.
     print(f"Skipped {np.count_nonzero(~valid)} fieldlines due to invalid pixel mapping.")
-    valid_fieldlines = np.array(fieldlines)[valid]
-    #for f, x, y in zip(fieldlines, x_pix, y_pix):
-    #    print(x, x.unit)
-    #    print(y, y.unit)
-    # Only loop over valid values
+    valid_fieldlines = np.array(fieldlines)[valid] # Keep only fieldlines whose seeds mapped successfully to image pixels.
     for f, x, y in zip(valid_fieldlines, x_vals[valid], y_vals[valid]):
-        f.start_pix = (int(x), int(y))
-        #f.start_pix = (int(x.value), int(y.value))
+        f.start_pix = (int(x), int(y)) # Round to nearest pixel since image indices must be integers, not sub-pixel floats.
         coords = f.coords.cartesian.xyz.to_value().T # Convert 3D coordinates to Nx3 array, one row per step along the fieldline, which is exactly what is needed to compute distances between steps.
         diffs = np.diff(coords, axis=0) # Stepwise differences between points along the line
         f.length = np.sum(np.linalg.norm(diffs, axis=1)) # Arc length of the field line via Euclidean distance
