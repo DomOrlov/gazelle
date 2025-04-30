@@ -220,6 +220,10 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     plt.title("Raw EIS Map")
     plt.show() # This is the region of interest, the EIS map, that we want to trace fieldlines.
 
+    print(f"EIS map shape: {map.data.shape}")
+    print(f"WCS dimensions: {map.dimensions}")
+
+
     # hmi synoptic maps provide a global magentic map of the sun to trace fieldlines
     m_hmi = hmi_daily_download(map.date.value)
 
@@ -382,8 +386,16 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     #seeds_2d = seeds.transform_to(map.coordinate_frame.replicate(obstime=map.date)) # Convert seed coordinates to the 2D helioprojective frame of the EIS map.
     seeds_2d = seeds.transform_to(Helioprojective(obstime=map.date, observer=map.observer_coordinate))
     print("Sample seed Solar-X/Y after transform:", seeds_2d[0].Tx.to(u.arcsec), seeds_2d[0].Ty.to(u.arcsec))
+    # Print transformed world coordinate and resulting pixel coordinate
+    test_coord = seeds_2d[0]
+    print("Seed 0 world coordinate (Tx, Ty):", test_coord.Tx.to(u.arcsec), test_coord.Ty.to(u.arcsec))
+    print("Mapped to pixel:", map.world_to_pixel(test_coord))
+
     print("===========================")
     x_pix, y_pix = map.world_to_pixel(seeds_2d) # Map each transformed seed coordinate to its corresponding (x, y) pixel location on the EIS image.
+    print(f"x_pix range: {x_pix.min()} to {x_pix.max()}")
+    print(f"y_pix range: {y_pix.min()} to {y_pix.max()}")
+    print(f"Map shape (Y, X): {map.data.shape}")
     x_vals = x_pix.value # Extract raw pixel values from astropy Quantity objects.
     y_vals = y_pix.value 
     valid = np.isfinite(x_vals) & np.isfinite(y_vals) # Identify seeds with valid pixel mappings.
