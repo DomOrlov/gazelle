@@ -357,9 +357,22 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     # Fieldline reaches the source surface (2.5) = open fieldline. Fieldline reaches the solar surface (1) = closed fieldline. The fieldline hits max_steps and is forcibly stopped.
     for f in fieldlines:
         try:
-            f.b = pfss_output.b_eval(f.coords)
+            f.b = pfss_output.get_bvec(f.coords, out_type="cartesian")
         except Exception as e:
             f.b = None
+
+    # DEBUG BLOCK — Check radii
+    first_fline = fieldlines[0]
+    radii = first_fline.coords.radius.to(u.solRad)
+    print(f"Fieldline 0 radius range: min = {radii.min():.2f}, max = {radii.max():.2f}")
+
+    # DEBUG BLOCK — Try evaluating B-field directly
+    try:
+        B_test = pfss_output.get_bvec(first_fline.coords)
+        print("Test B field shape:", B_test.shape)
+        print("Test B field sample (Gauss):", B_test[0].to(u.Gauss))
+    except Exception as e:
+        print("b_eval() failed with error:", e)
 
     footpoints_lon = [f.coords.lon[0].to(u.deg).value for f in fieldlines if len(f.coords.lon) > 0]
     footpoints_lat = [f.coords.lat[0].to(u.deg).value for f in fieldlines if len(f.coords.lat) > 0]
@@ -389,7 +402,9 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     print("Sample seed Carrington lon/lat before transform:", seeds[0].lon.deg, seeds[0].lat.deg)
     #seeds_2d = seeds.transform_to(map.coordinate_frame) # Convert seed coordinates to the 2D helioprojective frame of the EIS map.
     #seeds_2d = seeds.transform_to(map.coordinate_frame.replicate(obstime=map.date)) # Convert seed coordinates to the 2D helioprojective frame of the EIS map.
-    seeds_2d = seeds.transform_to(Helioprojective(obstime=map.date, observer=map.observer_coordinate))
+    #seeds_2d = seeds.transform_to(Helioprojective(obstime=map.date, observer=map.observer_coordinate))
+    target_frame = map.pixel_to_world(0*u.pix, 0*u.pix).frame
+    seeds_2d = seeds.transform_to(target_frame)
     print("Sample seed Solar-X/Y after transform:", seeds_2d[0].Tx.to(u.arcsec), seeds_2d[0].Ty.to(u.arcsec))
     # Print transformed world coordinate and resulting pixel coordinate
     test_coord = seeds_2d[0]
@@ -448,9 +463,13 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     open_fieldlines = OpenFieldLines(open_lines) if open_lines else OpenFieldLines([]) # If open_lines is not empty, create OpenFieldLines object, else create an empty one.
     closed_fieldlines = ClosedFieldLines(closed_lines) if closed_lines else ClosedFieldLines([]) # If closed_lines is not empty, create ClosedFieldLines object, else create an empty one.
 
+
     print(f"Total field lines: {len(fieldlines)}")
     print(f"Open field lines: {len(open_fieldlines)}")
     print(f"Closed field lines: {len(closed_fieldlines)}")
+    print("Target frame used:", target_frame)
+    print("Frame of seeds_2d:", seeds_2d.frame)
+    print("EIS map frame:", map.coordinate_frame)
     return open_fieldlines, closed_fieldlines
 
 
