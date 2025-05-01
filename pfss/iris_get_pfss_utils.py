@@ -384,7 +384,8 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     print("Sample seed Carrington lon/lat before transform:", seeds[0].lon.deg, seeds[0].lat.deg)
     #seeds_2d = seeds.transform_to(map.coordinate_frame) # Convert seed coordinates to the 2D helioprojective frame of the EIS map.
     #seeds_2d = seeds.transform_to(map.coordinate_frame.replicate(obstime=map.date)) # Convert seed coordinates to the 2D helioprojective frame of the EIS map.
-    seeds_2d = seeds.transform_to(Helioprojective(obstime=map.date, observer=map.observer_coordinate))
+    #seeds_2d = seeds.transform_to(Helioprojective(obstime=map.date, observer=map.observer_coordinate))
+    seeds_2d = seeds.transform_to(map.wcs.output_frame)
     print("Sample seed Solar-X/Y after transform:", seeds_2d[0].Tx.to(u.arcsec), seeds_2d[0].Ty.to(u.arcsec))
     # Print transformed world coordinate and resulting pixel coordinate
     test_coord = seeds_2d[0]
@@ -419,6 +420,10 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     plt.legend()
     plt.grid(True)
     plt.show() # Shows whether the fieldlines actually map back to EIS data in the correct orientation.
+    # Optional sanity check
+    x_check, y_check = map.world_to_pixel(map.pixel_to_world(0*u.pix, 0*u.pix))
+    print(f"Pixel (0,0) round-trip lands at: ({x_check}, {y_check})")
+
 
     open_lines = [f for f in fieldlines if f.is_open] # For each fieldline f in fieldlines, check if f.is_open == True, if yes add to open_lines
     closed_lines = [f for f in fieldlines if not f.is_open] # For each fieldline f in fieldlines, check if f.is_open == False, if yes add to closed_lines
