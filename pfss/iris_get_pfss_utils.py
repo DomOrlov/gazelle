@@ -353,9 +353,14 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     max_steps = int(np.ceil(10 * nrho / ds)) # .ceil rounds to the nearest integer, this computes a maximum number of steps that guarantees a fieldline can reach the top (2.5 R☉) or bottom (1 R☉) without runnin g out of steps.
     tracer = pfsspy.tracing.FortranTracer(step_size=ds, max_steps=max_steps) # Initialize a tracer to follow magnetic fieldlines step-by-step through the solved PFSS field.
     print('processing fieldlines')
-    fieldlines = tracer.trace(SkyCoord(seeds), pfss_output,) # .trace takes list of seed starting points, takes magentic field solution, tracing the fieldlines starting at each seed point.
+    fieldlines = tracer.trace(SkyCoord(seeds), pfss_output) # .trace takes list of seed starting points, takes magentic field solution, tracing the fieldlines starting at each seed point.
     # Fieldline reaches the source surface (2.5) = open fieldline. Fieldline reaches the solar surface (1) = closed fieldline. The fieldline hits max_steps and is forcibly stopped.
-    
+    for f in fieldlines:
+        try:
+            f.b = pfss_output.b_eval(f.coords)
+        except Exception as e:
+            f.b = None
+
     footpoints_lon = [f.coords.lon[0].to(u.deg).value for f in fieldlines if len(f.coords.lon) > 0]
     footpoints_lat = [f.coords.lat[0].to(u.deg).value for f in fieldlines if len(f.coords.lat) > 0]
 
