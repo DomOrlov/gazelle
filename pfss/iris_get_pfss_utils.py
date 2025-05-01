@@ -24,6 +24,7 @@ import glob
 from pfsspy.fieldline import OpenFieldLines, ClosedFieldLines
 from sunpy.coordinates import Helioprojective
 from datetime import timedelta
+from sunpy.physics.differential_rotation import solar_rotate_coordinate
 
 
 
@@ -239,7 +240,7 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
 
     m_hmi = m_hmi_today if delta_today < delta_yesterday else m_hmi_yesterday
     print(f"Selected HMI date: {m_hmi.date} (closer to EIS time {map.date})")
-    
+
     m_hmi.plot()
     plt.title("Raw HMI Magnetogram")
     plt.show() # Confirms it covers the area of interest.
@@ -298,6 +299,11 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
         m_hmi_resample.date
     )
 
+    # Rotate bounding coordinates forward to the EIS time
+    blc_ar_synop_rot = solar_rotate_coordinate(blc_ar_synop, map.date)
+    trc_ar_synop_rot = solar_rotate_coordinate(trc_ar_synop, map.date)
+
+
     # Select pixels that are either above or below the gauss values, these pixels will be used as seed points for PFSS fieldline tracing.
     masked_pix_y, masked_pix_x = np.where((m_hmi_resample.data >=max_gauss) | (m_hmi_resample.data < min_gauss)) # np.where returns the (row, column) indices (masked_pix_y, masked_pix_x) of the selected pixels.
 
@@ -326,9 +332,14 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
 
     print(f"Number of initial seed points: {len(seeds)}")
 
-    # Selects seeds based on if they reside within our HMI magnetogram FOV (+10%).
-    in_lon = np.logical_and(seeds.lon > blc_ar_synop.lon, seeds.lon < trc_ar_synop.lon)
-    in_lat = np.logical_and(seeds.lat > blc_ar_synop.lat, seeds.lat < trc_ar_synop.lat)
+    ## Selects seeds based on if they reside within our HMI magnetogram FOV (+10%).
+    #in_lon = np.logical_and(seeds.lon > blc_ar_synop.lon, seeds.lon < trc_ar_synop.lon)
+    #in_lat = np.logical_and(seeds.lat > blc_ar_synop.lat, seeds.lat < trc_ar_synop.lat)
+
+    in_lon = np.logical_and(seeds.lon > blc_ar_synop_rot.lon, seeds.lon < trc_ar_synop_rot.lon)
+    in_lat = np.logical_and(seeds.lat > blc_ar_synop_rot.lat, seeds.lat < trc_ar_synop_rot.lat)
+
+
     # Filters based on the previous set HMI magnetogram FOV, only keeping the seeds that are within the FOV.
     seeds = seeds[np.where(np.logical_and(in_lon, in_lat))]
     plt.figure(figsize=(8,6))
@@ -337,20 +348,20 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     plt.xlabel("Carrington Longitude (deg)")
     plt.ylabel("Carrington Latitude (deg)")
 
-    # Add rectangle to show the EIS FOV (in Carrington coordinates)
-    lon_min = blc_ar_synop.lon.deg
-    lon_max = trc_ar_synop.lon.deg
-    lat_min = blc_ar_synop.lat.deg
-    lat_max = trc_ar_synop.lat.deg
-    plt.gca().add_patch(Rectangle(
-        (lon_min, lat_min),
-        lon_max - lon_min,
-        lat_max - lat_min,
-        edgecolor='orange',
-        facecolor='none',
-        lw=2,
-        label='EIS FOV'
-    ))
+    ## Add rectangle to show the EIS FOV (in Carrington coordinates)
+    #lon_min = blc_ar_synop.lon.deg
+    #lon_max = trc_ar_synop.lon.deg
+    #lat_min = blc_ar_synop.lat.deg
+    #lat_max = trc_ar_synop.lat.deg
+    #plt.gca().add_patch(Rectangle(
+    #    (lon_min, lat_min),
+    #    lon_max - lon_min,
+    #    lat_max - lat_min,
+    #    edgecolor='orange',
+    #    facecolor='none',
+    #    lw=2,
+    #    label='EIS FOV'
+    #))
 
     plt.legend()
     plt.grid(True)
@@ -427,16 +438,36 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     plt.figure(figsize=(8,6))
     plt.scatter(footpoints_lon, footpoints_lat, s=1, c='g')
     plt.title("Fieldline Starting Footpoints After Tracing")
+    #plt.gca().add_patch(Rectangle(
+    #    (lon_min, lat_min),
+    #    lon_max - lon_min,
+    #    lat_max - lat_min,
+    #    edgecolor='orange',
+    #    facecolor='none',
+    #    lw=2,
+    #    label='EIS FOV'
+    #))
+    #plt.legend()
+
+    lon_min_rot = blc_ar_synop_rot.lon.deg
+    lon_max_rot = trc_ar_synop_rot.lon.deg
+    lat_min_rot = blc_ar_synop_rot.lat.deg
+    lat_max_rot = trc_ar_synop_rot.lat.deg
+
     plt.gca().add_patch(Rectangle(
-        (lon_min, lat_min),
-        lon_max - lon_min,
-        lat_max - lat_min,
-        edgecolor='orange',
+        (lon_min_rot, lat_min_rot),
+        lon_max_rot - lon_min_rot,
+        lat_max_rot - lat_min_rot,
+        edgecolor='cyan',
         facecolor='none',
         lw=2,
-        label='EIS FOV'
+        linestyle='--',
+        label='Rotated EIS FOV'
     ))
-    plt.legend()
+
+    print(f"Δ Carrington Lon after rotation: {(trc_ar_synop_rot.lon - trc_ar_synop.lon).to(u.deg)}")
+    print(f"Δ Carrington Lat after rotation: {(trc_ar_synop_rot.lat - trc_ar_synop.lat).to(u.deg)}")
+
 
     plt.grid(True)
     plt.show() # Confirms that fieldlines were successfully traced from the seeds.
