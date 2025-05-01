@@ -247,18 +247,18 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     plt.show() # Confirms it covers the area of interest.
 
     # Define functions to change the observer time and frame
-    #change_obstime = lambda x,y: SkyCoord( # x original Skycoord, y = new time
-    #    x.replicate( # makes a copy of x
-    #        observer=x.observer.replicate(obstime=y), # takes original observer and makes a copy of it with a new time, y.
-    #        obstime=y # sets the new time for the copy of x
-    #    )
-    #)
-    change_obstime = lambda x, y: SkyCoord(
-        x.replicate(
-            observer=x.observer if isinstance(x.observer, BaseCoordinateFrame) else x.observer.frame,
-            obstime=y
+    change_obstime = lambda x,y: SkyCoord( # x original Skycoord, y = new time
+        x.replicate( # makes a copy of x
+            observer=x.observer.replicate(obstime=y), # takes original observer and makes a copy of it with a new time, y.
+            obstime=y # sets the new time for the copy of x
         )
     )
+    #change_obstime = lambda x, y: SkyCoord(
+    #    x.replicate(
+    #        observer=x.observer if isinstance(x.observer, BaseCoordinateFrame) else x.observer.frame,
+    #        obstime=y
+    #    )
+    #)
 
     change_obstime_frame = lambda x,y: x.replicate_without_data( #original frame, y = new time
         observer=x.observer.replicate(obstime=y), # Makes a copy of the frame without copying any coordinate data inside.
@@ -308,8 +308,9 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     )
 
     # Rotate bounding coordinates forward to the EIS time
-    blc_ar_synop_rot = solar_rotate_coordinate(blc_ar_synop, map.date)
-    trc_ar_synop_rot = solar_rotate_coordinate(trc_ar_synop, map.date)
+    blc_ar_synop_rot = solar_rotate_coordinate(blc_ar_synop, observer=map.observer_coordinate, time=map.date)
+    trc_ar_synop_rot = solar_rotate_coordinate(trc_ar_synop, observer=map.observer_coordinate, time=map.date)
+
 
 
     # Select pixels that are either above or below the gauss values, these pixels will be used as seed points for PFSS fieldline tracing.
