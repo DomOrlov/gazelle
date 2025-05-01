@@ -23,6 +23,8 @@ import re
 import glob
 from pfsspy.fieldline import OpenFieldLines, ClosedFieldLines
 from sunpy.coordinates import Helioprojective
+from datetime import timedelta
+
 
 
 # Additional imports that might be required based on the code context
@@ -224,8 +226,18 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     print(f"WCS dimensions: {map.dimensions}")
 
 
-    # hmi synoptic maps provide a global magentic map of the sun to trace fieldlines
-    m_hmi = hmi_daily_download(map.date.value)
+    ## hmi synoptic maps provide a global magentic map of the sun to trace fieldlines
+    #m_hmi = hmi_daily_download(map.date.value)
+
+    # Get both HMI maps
+    m_hmi_today = hmi_daily_download(map.date.value)
+    m_hmi_yesterday = hmi_daily_download(map.date.value - timedelta(days=1))
+
+    # Choose the one closest in time to the EIS observation
+    delta_today = abs(m_hmi_today.date - map.date)
+    delta_yesterday = abs(m_hmi_yesterday.date - map.date)
+
+    m_hmi = m_hmi_today if delta_today < delta_yesterday else m_hmi_yesterday
 
     m_hmi.plot()
     plt.title("Raw HMI Magnetogram")
@@ -358,7 +370,7 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     for f in fieldlines:
         try:
             #f.b = pfss_output.get_bvec(f.coords, out_type="cartesian") #Error: Unitless
-            f.b = pfss_output.get_bvec(f.coords, out_type="cartesian") * u.G # * * u.G converts the unitless output to the correct units.
+            f.b = pfss_output.get_bvec(f.coords, out_type="cartesian") * u.G # * u.G converts the unitless output to the correct units.
         except Exception as e:
             f.b = None
 
