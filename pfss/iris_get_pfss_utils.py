@@ -355,37 +355,37 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     print('processing fieldlines')
     fieldlines = tracer.trace(SkyCoord(seeds), pfss_output) # .trace takes list of seed starting points, takes magentic field solution, tracing the fieldlines starting at each seed point.
     # Fieldline reaches the source surface (2.5) = open fieldline. Fieldline reaches the solar surface (1) = closed fieldline. The fieldline hits max_steps and is forcibly stopped.
-    #for f in fieldlines:
-    #    try:
-    #        #f.b = pfss_output.get_bvec(f.coords, out_type="cartesian") #Error: Unitless
-    #        f.b = pfss_output.get_bvec(f.coords, out_type="cartesian") * u.T # * * u.T converts the unitless output to the correct units.
-    #    except Exception as e:
-    #        f.b = None
-
     for f in fieldlines:
         try:
-            bvec = pfss_output.get_bvec(f.coords, out_type="cartesian")
-
-            # Check if the returned value has units
-            print("Raw bvec unit:", getattr(bvec, "unit", "No unit attr"))
-            print("Sample value:", bvec[0:3])
-
-            # If no unit or unit is dimensionless, apply Tesla
-            if not isinstance(bvec, u.Quantity) or bvec.unit == u.dimensionless_unscaled:
-                print("Applying unit manually.")
-                bvec = bvec * u.T
-
-            f.b = bvec
-
+            #f.b = pfss_output.get_bvec(f.coords, out_type="cartesian") #Error: Unitless
+            f.b = pfss_output.get_bvec(f.coords, out_type="cartesian") * u.G # * * u.G converts the unitless output to the correct units.
         except Exception as e:
-            print("Error assigning B field:", e)
             f.b = None
+
+    #for f in fieldlines:
+    #    try:
+    #        bvec = pfss_output.get_bvec(f.coords, out_type="cartesian")
+
+    #        # Check if the returned value has units
+    #        print("Raw bvec unit:", getattr(bvec, "unit", "No unit attr"))
+    #        print("Sample value:", bvec[0:3])
+
+    #        # If no unit or unit is dimensionless, apply Tesla
+    #        if not isinstance(bvec, u.Quantity) or bvec.unit == u.dimensionless_unscaled:
+    #            print("Applying unit manually.")
+    #            bvec = bvec * u.T
+
+    #        f.b = bvec
+
+    #    except Exception as e:
+    #        print("Error assigning B field:", e)
+    #        f.b = None
 
     all_magnitudes = []
     for f in fieldlines:
         if hasattr(f, 'b') and f.b is not None:
-            mags = np.linalg.norm(f.b.to(u.Gauss).value, axis=1)
-            mags = mags[np.isfinite(mags)]  # Remove any nan or inf
+            mags = np.linalg.norm(f.b.value, axis=1)
+            mags = mags[np.isfinite(mags)]
             all_magnitudes.extend(mags)
 
 
@@ -394,18 +394,18 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
         print(f"B magnitude range: {all_magnitudes.min():.2f} G – {all_magnitudes.max():.2f} G")
         print(f"B mean: {np.mean(all_magnitudes):.2f} G, median: {np.median(all_magnitudes):.2f} G")
 
-    # DEBUG BLOCK — Check radii
-    first_fline = fieldlines[0]
-    radii = first_fline.coords.radius.to(u.solRad)
-    print(f"Fieldline 0 radius range: min = {radii.min():.2f}, max = {radii.max():.2f}")
+    ## DEBUG BLOCK — Check radii
+    #first_fline = fieldlines[0]
+    #radii = first_fline.coords.radius.to(u.solRad)
+    #print(f"Fieldline 0 radius range: min = {radii.min():.2f}, max = {radii.max():.2f}")
 
-    # DEBUG BLOCK — Try evaluating B-field directly
-    try:
-        B_test = pfss_output.get_bvec(first_fline.coords) * u.T
-        print("Test B field shape:", B_test.shape)
-        print("Test B field sample (Gauss):", B_test[0].to(u.Gauss))
-    except Exception as e:
-        print("b_eval() failed with error:", e)
+    ## DEBUG BLOCK — Try evaluating B-field directly
+    #try:
+    #    B_test = pfss_output.get_bvec(first_fline.coords) * u.T
+    #    print("Test B field shape:", B_test.shape)
+    #    print("Test B field sample (Gauss):", B_test[0].to(u.Gauss))
+    #except Exception as e:
+    #    print("b_eval() failed with error:", e)
 
     footpoints_lon = [f.coords.lon[0].to(u.deg).value for f in fieldlines if len(f.coords.lon) > 0]
     footpoints_lat = [f.coords.lat[0].to(u.deg).value for f in fieldlines if len(f.coords.lat) > 0]
@@ -464,7 +464,7 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
 
         # Mean magnetic field strength metadata
         if hasattr(f, 'b') and f.b is not None: # Check if the fieldline has magnetic field data.
-            B_magnitude = np.linalg.norm(f.b.to(u.Gauss).value, axis=1) # f.b.to(u.Gauss) converts units from Tesla to Gauss, .value strips away the units, np.linalg.norm() computes the vector magnitude.
+            B_magnitude = np.linalg.norm(f.b.value, axis=1) # f.b.to(u.Gauss) converts units from Tesla to Gauss, .value strips away the units, np.linalg.norm() computes the vector magnitude.
             f.mean_B = np.mean(B_magnitude) # Take the average of all |B| values along the fieldline.
         else:
             f.mean_B = np.nan
@@ -488,6 +488,13 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     x_check, y_check = map.world_to_pixel(map.pixel_to_world(0*u.pix, 0*u.pix))
     print(f"Pixel (0,0) round-trip lands at: ({x_check}, {y_check})")
 
+    plt.figure()
+    plt.hist([f.mean_B for f in valid_fieldlines if np.isfinite(f.mean_B)], bins=50)
+    plt.title("Distribution of Mean Magnetic Field Strengths")
+    plt.xlabel("Mean |B| (Gauss)")
+    plt.ylabel("Number of Fieldlines")
+    plt.grid(True)
+    plt.show()
 
     open_lines = [f for f in fieldlines if f.is_open] # For each fieldline f in fieldlines, check if f.is_open == True, if yes add to open_lines
     closed_lines = [f for f in fieldlines if not f.is_open] # For each fieldline f in fieldlines, check if f.is_open == False, if yes add to closed_lines
