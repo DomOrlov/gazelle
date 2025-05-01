@@ -368,7 +368,7 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
 
             # Check if the returned value has units
             print("Raw bvec unit:", getattr(bvec, "unit", "No unit attr"))
-            print("Sample value:", bvec[0:10])
+            print("Sample value:", bvec[0:3])
 
             # If no unit or unit is dimensionless, apply Tesla
             if not isinstance(bvec, u.Quantity) or bvec.unit == u.dimensionless_unscaled:
