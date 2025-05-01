@@ -238,7 +238,8 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     delta_yesterday = abs(m_hmi_yesterday.date - map.date)
 
     m_hmi = m_hmi_today if delta_today < delta_yesterday else m_hmi_yesterday
-
+    print(f"Selected HMI date: {m_hmi.date} (closer to EIS time {map.date})")
+    
     m_hmi.plot()
     plt.title("Raw HMI Magnetogram")
     plt.show() # Confirms it covers the area of interest.
