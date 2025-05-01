@@ -355,12 +355,42 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     print('processing fieldlines')
     fieldlines = tracer.trace(SkyCoord(seeds), pfss_output) # .trace takes list of seed starting points, takes magentic field solution, tracing the fieldlines starting at each seed point.
     # Fieldline reaches the source surface (2.5) = open fieldline. Fieldline reaches the solar surface (1) = closed fieldline. The fieldline hits max_steps and is forcibly stopped.
+    #for f in fieldlines:
+    #    try:
+    #        #f.b = pfss_output.get_bvec(f.coords, out_type="cartesian") #Error: Unitless
+    #        f.b = pfss_output.get_bvec(f.coords, out_type="cartesian") * u.T # * * u.T converts the unitless output to the correct units.
+    #    except Exception as e:
+    #        f.b = None
+
     for f in fieldlines:
         try:
-            #f.b = pfss_output.get_bvec(f.coords, out_type="cartesian") #Error: Unitless
-            f.b = pfss_output.get_bvec(f.coords, out_type="cartesian") * u.T # * * u.T converts the unitless output to the correct units.
+            bvec = pfss_output.get_bvec(f.coords, out_type="cartesian")
+
+            # Check if the returned value has units
+            print("Raw bvec unit:", getattr(bvec, "unit", "No unit attr"))
+            print("Sample value:", bvec[0:10])
+
+            # If no unit or unit is dimensionless, apply Tesla
+            if not isinstance(bvec, u.Quantity) or bvec.unit == u.dimensionless_unscaled:
+                print("Applying unit manually.")
+                bvec = bvec * u.T
+
+            f.b = bvec
+
         except Exception as e:
+            print("Error assigning B field:", e)
             f.b = None
+
+    all_magnitudes = []
+    for f in fieldlines:
+        if hasattr(f, 'b') and f.b is not None:
+            mags = np.linalg.norm(f.b.to(u.Gauss).value, axis=1)
+            all_magnitudes.extend(mags)
+
+    if all_magnitudes:
+        all_magnitudes = np.array(all_magnitudes)
+        print(f"B magnitude range: {all_magnitudes.min():.2f} G – {all_magnitudes.max():.2f} G")
+        print(f"B mean: {np.mean(all_magnitudes):.2f} G, median: {np.median(all_magnitudes):.2f} G")
 
     # DEBUG BLOCK — Check radii
     first_fline = fieldlines[0]
