@@ -357,7 +357,8 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     # Fieldline reaches the source surface (2.5) = open fieldline. Fieldline reaches the solar surface (1) = closed fieldline. The fieldline hits max_steps and is forcibly stopped.
     for f in fieldlines:
         try:
-            f.b = pfss_output.get_bvec(f.coords, out_type="cartesian")
+            #f.b = pfss_output.get_bvec(f.coords, out_type="cartesian") #Error: Unitless
+            f.b = pfss_output.get_bvec(f.coords, out_type="cartesian") * pfss_output.bunit # * pfss_output.bunit converts the unitless output to the correct units.
         except Exception as e:
             f.b = None
 
@@ -403,8 +404,7 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     #seeds_2d = seeds.transform_to(map.coordinate_frame) # Convert seed coordinates to the 2D helioprojective frame of the EIS map.
     #seeds_2d = seeds.transform_to(map.coordinate_frame.replicate(obstime=map.date)) # Convert seed coordinates to the 2D helioprojective frame of the EIS map.
     #seeds_2d = seeds.transform_to(Helioprojective(obstime=map.date, observer=map.observer_coordinate))
-    target_frame = map.pixel_to_world(0*u.pix, 0*u.pix).frame
-    seeds_2d = seeds.transform_to(target_frame)
+    seeds_2d = seeds.transform_to(map.pixel_to_world(0*u.pix, 0*u.pix).frame)
     print("Sample seed Solar-X/Y after transform:", seeds_2d[0].Tx.to(u.arcsec), seeds_2d[0].Ty.to(u.arcsec))
     # Print transformed world coordinate and resulting pixel coordinate
     test_coord = seeds_2d[0]
