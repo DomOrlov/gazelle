@@ -245,13 +245,26 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     plt.title("Raw HMI Magnetogram")
     plt.show() # Confirms it covers the area of interest.
 
-    # Define functions to change the observer time and frame
-    change_obstime = lambda x,y: SkyCoord( # x original Skycoord, y = new time
-        x.replicate( # makes a copy of x
-            observer=x.observer.replicate(obstime=y), # takes original observer and makes a copy of it with a new time, y.
-            obstime=y # sets the new time for the copy of x
+    ## Define functions to change the observer time and frame
+    #change_obstime = lambda x,y: SkyCoord( # x original Skycoord, y = new time
+    #    x.replicate( # makes a copy of x
+    #        observer=x.observer.replicate(obstime=y), # takes original observer and makes a copy of it with a new time, y.
+    #        obstime=y # sets the new time for the copy of x
+    #    )
+    #)
+
+    # Adding a safe guard to ensure observer is a valid BaseCoordinateFrame not a SkyCoord
+    def change_obstime(coord, new_time):
+        observer = coord.observer
+        if isinstance(observer, SkyCoord):
+            observer = observer.frame  # Convert to BaseCoordinateFrame
+        return SkyCoord(
+            coord.replicate(
+                observer=observer.replicate(obstime=new_time),
+                obstime=new_time
+            )
         )
-    )
+
     change_obstime_frame = lambda x,y: x.replicate_without_data( #original frame, y = new time
         observer=x.observer.replicate(obstime=y), # Makes a copy of the frame without copying any coordinate data inside.
         obstime=y
