@@ -384,8 +384,7 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     print("Sample seed Carrington lon/lat before transform:", seeds[0].lon.deg, seeds[0].lat.deg)
     #seeds_2d = seeds.transform_to(map.coordinate_frame) # Convert seed coordinates to the 2D helioprojective frame of the EIS map.
     #seeds_2d = seeds.transform_to(map.coordinate_frame.replicate(obstime=map.date)) # Convert seed coordinates to the 2D helioprojective frame of the EIS map.
-    #seeds_2d = seeds.transform_to(Helioprojective(obstime=map.date, observer=map.observer_coordinate))
-    seeds_2d = seeds.transform_to(map.wcs.output_frame)
+    seeds_2d = seeds.transform_to(Helioprojective(obstime=map.date, observer=map.observer_coordinate))
     print("Sample seed Solar-X/Y after transform:", seeds_2d[0].Tx.to(u.arcsec), seeds_2d[0].Ty.to(u.arcsec))
     # Print transformed world coordinate and resulting pixel coordinate
     test_coord = seeds_2d[0]
@@ -403,12 +402,25 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     print(f"Skipped {np.count_nonzero(~valid)} fieldlines due to invalid pixel mapping.")
     valid_fieldlines = np.array(fieldlines)[valid] # Keep only fieldlines whose seeds mapped successfully to image pixels.
     for f, x, y in zip(valid_fieldlines, x_vals[valid], y_vals[valid]):
+
+        # Loop length and lopp starting pixel metadata
         f.start_pix = (int(x), int(y)) # Round to nearest pixel since image indices must be integers, not sub-pixel floats.
         coords = f.coords.cartesian.xyz.to_value().T # Convert 3D coordinates to Nx3 array, one row per step along the fieldline, which is exactly what is needed to compute distances between steps.
-        diffs = np.diff(coords, axis=0) # Stepwise differences between points along the line
-        f.length = np.sum(np.linalg.norm(diffs, axis=1)) # Arc length of the field line via Euclidean distance
+        diffs = np.diff(coords, axis=0) # Stepwise differences between points along the line.
+        f.length = np.sum(np.linalg.norm(diffs, axis=1)) # Arc length of the field line via Euclidean distance.
 
-    # Plot to verify that start_pix aligns with EIS data
+
+        # Mean magnetic field strength metadata
+        if hasattr(f, 'b') and f.b is not None: # Check if the fieldline has magnetic field data.
+            B_magnitude = np.linalg.norm(f.b.to(u.Gauss).value, axis=1) # f.b.to(u.Gauss) converts units from Tesla to Gauss, .value strips away the units, np.linalg.norm() computes the vector magnitude.
+            f.mean_B = np.mean(B_magnitude) # Take the average of all |B| values along the fieldline.
+        else:
+            f.mean_B = np.nan
+
+    num_with_mean_B = sum(np.isfinite(f.mean_B) for f in valid_fieldlines)
+    print(f"Fieldlines with valid mean_B metadata: {num_with_mean_B} / {len(valid_fieldlines)}")
+
+    # Plot to verify that start_pix aligns with EIS data.
     plt.figure(figsize=(6, 10))
     plt.imshow(map.data, origin='lower', cmap='gray', aspect='auto')
     x_pix = [f.start_pix[0] for f in valid_fieldlines]
