@@ -348,12 +348,6 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     rss = 2.5  # Source surface radius (in solar radii, where the fieldlines are traced to, boundary condition for the model).
     pfss_input = pfsspy.Input(m_hmi_resample, nrho, rss) # .Input tell pfsspy what magentogram to use what radial grid to use and where to place the source surface.
     pfss_output = pfsspy.pfss(pfss_input) # .pfss solves the pfss problom and outputs a solution.
-    
-    # Manually assign units if missing
-    if pfss_output.bunit == u.dimensionless_unscaled:
-        print("WARNING: Magnetic field has no unit. Assuming Tesla.")
-        pfss_output.bunit = u.T
-
 
     ds = 0.01 # Step size for fieldline tracing (Each tracing step moves the fieldline by 0.01 R☉ before recalculating direction).
     max_steps = int(np.ceil(10 * nrho / ds)) # .ceil rounds to the nearest integer, this computes a maximum number of steps that guarantees a fieldline can reach the top (2.5 R☉) or bottom (1 R☉) without runnin g out of steps.
@@ -364,7 +358,7 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     for f in fieldlines:
         try:
             #f.b = pfss_output.get_bvec(f.coords, out_type="cartesian") #Error: Unitless
-            f.b = pfss_output.get_bvec(f.coords, out_type="cartesian") * pfss_output.bunit # * pfss_output.bunit converts the unitless output to the correct units.
+            f.b = pfss_output.get_bvec(f.coords, out_type="cartesian") * u.T # * * u.T converts the unitless output to the correct units.
         except Exception as e:
             f.b = None
 
@@ -375,7 +369,7 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
 
     # DEBUG BLOCK — Try evaluating B-field directly
     try:
-        B_test = pfss_output.get_bvec(first_fline.coords)
+        B_test = pfss_output.get_bvec(first_fline.coords) * u.T
         print("Test B field shape:", B_test.shape)
         print("Test B field sample (Gauss):", B_test[0].to(u.Gauss))
     except Exception as e:
@@ -473,7 +467,6 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     print(f"Total field lines: {len(fieldlines)}")
     print(f"Open field lines: {len(open_fieldlines)}")
     print(f"Closed field lines: {len(closed_fieldlines)}")
-    print("Target frame used:", target_frame)
     print("Frame of seeds_2d:", seeds_2d.frame)
     print("EIS map frame:", map.coordinate_frame)
     return open_fieldlines, closed_fieldlines
