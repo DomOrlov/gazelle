@@ -23,6 +23,7 @@ import re
 import glob
 from pfsspy.fieldline import OpenFieldLines, ClosedFieldLines
 from sunpy.coordinates import Helioprojective
+from astropy.coordinates import BaseCoordinateFrame
 from datetime import timedelta
 from sunpy.physics.differential_rotation import solar_rotate_coordinate
 
@@ -252,10 +253,10 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     #        obstime=y # sets the new time for the copy of x
     #    )
     #)
-    change_obstime = lambda x, y: SkyCoord(  # x original Skycoord, y = new time
-        x.replicate( # makes a copy of x
-            observer=x.observer.frame, # .observer.frame always returns a BaseCoordinateFrame
-            obstime=y # sets the new time for the copy of x
+    change_obstime = lambda x, y: SkyCoord(
+        x.replicate(
+            observer=x.observer if isinstance(x.observer, BaseCoordinateFrame) else x.observer.frame,
+            obstime=y
         )
     )
 
