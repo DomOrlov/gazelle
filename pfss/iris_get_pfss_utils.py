@@ -308,8 +308,8 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     )
 
     # Rotate bounding coordinates forward to the EIS time
-    blc_ar_synop_rot = solar_rotate_coordinate(blc_ar_synop, observer=map.observer_coordinate, time=map.date)
-    trc_ar_synop_rot = solar_rotate_coordinate(trc_ar_synop, observer=map.observer_coordinate, time=map.date)
+    blc_ar_synop_rot = solar_rotate_coordinate(blc_ar_synop, time=map.date)
+    trc_ar_synop_rot = solar_rotate_coordinate(trc_ar_synop, time=map.date)
 
 
 
