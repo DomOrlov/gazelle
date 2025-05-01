@@ -385,7 +385,9 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     for f in fieldlines:
         if hasattr(f, 'b') and f.b is not None:
             mags = np.linalg.norm(f.b.to(u.Gauss).value, axis=1)
+            mags = mags[np.isfinite(mags)]  # Remove any nan or inf
             all_magnitudes.extend(mags)
+
 
     if all_magnitudes:
         all_magnitudes = np.array(all_magnitudes)
