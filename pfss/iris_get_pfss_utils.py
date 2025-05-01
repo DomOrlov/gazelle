@@ -349,6 +349,12 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     pfss_input = pfsspy.Input(m_hmi_resample, nrho, rss) # .Input tell pfsspy what magentogram to use what radial grid to use and where to place the source surface.
     pfss_output = pfsspy.pfss(pfss_input) # .pfss solves the pfss problom and outputs a solution.
     
+    # Manually assign units if missing
+    if pfss_output.bunit == u.dimensionless_unscaled:
+        print("WARNING: Magnetic field has no unit. Assuming Tesla.")
+        pfss_output.bunit = u.T
+
+
     ds = 0.01 # Step size for fieldline tracing (Each tracing step moves the fieldline by 0.01 R☉ before recalculating direction).
     max_steps = int(np.ceil(10 * nrho / ds)) # .ceil rounds to the nearest integer, this computes a maximum number of steps that guarantees a fieldline can reach the top (2.5 R☉) or bottom (1 R☉) without runnin g out of steps.
     tracer = pfsspy.tracing.FortranTracer(step_size=ds, max_steps=max_steps) # Initialize a tracer to follow magnetic fieldlines step-by-step through the solved PFSS field.
