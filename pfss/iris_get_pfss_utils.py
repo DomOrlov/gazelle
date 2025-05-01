@@ -230,8 +230,8 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     #m_hmi = hmi_daily_download(map.date.value)
 
     # Get both HMI maps
-    m_hmi_today = hmi_daily_download(map.date.value)
-    m_hmi_yesterday = hmi_daily_download(map.date.value - timedelta(days=1))
+    m_hmi_today = hmi_daily_download(map.date)
+    m_hmi_yesterday = hmi_daily_download(map.date - timedelta(days=1))
 
     # Choose the one closest in time to the EIS observation
     delta_today = abs(m_hmi_today.date - map.date)
