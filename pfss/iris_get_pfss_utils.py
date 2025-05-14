@@ -395,25 +395,6 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
         except Exception as e:
             f.b = None
 
-    #for f in fieldlines:
-    #    try:
-    #        bvec = pfss_output.get_bvec(f.coords, out_type="cartesian")
-
-    #        # Check if the returned value has units
-    #        print("Raw bvec unit:", getattr(bvec, "unit", "No unit attr"))
-    #        print("Sample value:", bvec[0:3])
-
-    #        # If no unit or unit is dimensionless, apply Tesla
-    #        if not isinstance(bvec, u.Quantity) or bvec.unit == u.dimensionless_unscaled:
-    #            print("Applying unit manually.")
-    #            bvec = bvec * u.T
-
-    #        f.b = bvec
-
-    #    except Exception as e:
-    #        print("Error assigning B field:", e)
-    #        f.b = None
-
     all_magnitudes = []
     for f in fieldlines:
         if hasattr(f, 'b') and f.b is not None:
@@ -510,17 +491,56 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
 
         # Loop length and lopp starting pixel metadata
         f.start_pix = (int(x), int(y)) # Round to nearest pixel since image indices must be integers, not sub-pixel floats.
-        coords = f.coords.cartesian.xyz.to_value().T # Convert 3D coordinates to Nx3 array, one row per step along the fieldline, which is exactly what is needed to compute distances between steps.
-        diffs = np.diff(coords, axis=0) # Stepwise differences between points along the line.
-        f.length = np.sum(np.linalg.norm(diffs, axis=1)) # Arc length of the field line via Euclidean distance.
 
+        # Original Euclidean distance method, faster, but harder to read. 
+        ## f.coords is a list of 3D coordinate points along the fieldline f.
+        ## .cartesian gives us acess to the cartesian version of the coordinates, without this we could be dealing with spherical coordinates.
+        ## .xyz gives you a 3xN Quantity array, x, y and z.
+        ## .to_value() removes the physical units, returning a plain NumPy array of floats
+        ## .T transposes the array from (3,N) to (N,3)
+        #coords = f.coords.cartesian.xyz.to_value().T 
+        ## np.diff computes the difference between the points, subracting each row form the next row.
+        ## axis=0 means operate between rows (downward, row-wise)
+        ## axis=1 means operate within rows (across columns)
+        #diffs = np.diff(coords, axis=0) # Stepwise differences between points along the line.
+        ## np.linalg is NumPy's linear algebra library.
+        ## .norm computes the vector norm, i.e the length of the vector.
+        #f.length = np.sum(np.linalg.norm(diffs, axis=1)) # Arc length of the field line via Euclidean distance.
 
+        coords = f.coords.cartesian # Converts from spherical to x, y, z, FortranTracer is done in spherical coords.
+        # Extract the x, y, z coords:
+        x = coords.x.value # .value removes the units so it is compatible with numpy, creating a float.
+        y = coords.y.value
+        z = coords.z.value
+        print("Number of points along fieldline:", len(x))
+
+        points = []
+        for i in range(len(x)):
+            point = [x[i], y[i], z[i]] # creates a single point x_i, y_i, z_i
+            points.append(point) # adds the point to the list of points.
+        points_diff = [] # This will store the distance between each point and the next.
+        for i in range(len(points)-1):
+            dx = points[i+1][0] - points[i][0] # This grabs the x coord of the next point and subtracts the x coord of the current point.
+            dy = points[i+1][1] - points[i][1]
+            dz = points[i+1][2] - points[i][2]
+            point_diff = [dx, dy, dz] # This creates a list of the differences in x, y, z.
+            points_diff.append(point_diff) # This adds the point_diff to the list of points_diff.
+
+        for i in range(len(points_diff)):
+            points_diff_x_squared = points_diff[i][0] ** 2 # This grabs the x coord of the current point_diff, and squarses it.
+            points_diff_y_squared = points_diff[i][1] ** 2 
+            points_diff_z_squared = points_diff[i][2] ** 2 
+            point_abs = np.sqrt(points_diff_x_squared + points_diff_y_squared + points_diff_z_squared)
+            total_length += point_abs # This adds the absolute value of the point_diff to the total length of the fieldline.
+        f.length = total_length
+        
         # Mean magnetic field strength metadata
         if hasattr(f, 'b') and f.b is not None: # Check if the fieldline has magnetic field data.
             B_magnitude = np.linalg.norm(f.b.value, axis=1) # f.b.to(u.Gauss) converts units from Tesla to Gauss, .value strips away the units, np.linalg.norm() computes the vector magnitude.
             f.mean_B = np.mean(B_magnitude) # Take the average of all |B| values along the fieldline.
         else:
             f.mean_B = np.nan
+
 
     num_with_mean_B = sum(np.isfinite(f.mean_B) for f in valid_fieldlines)
     print(f"Fieldlines with valid mean_B metadata: {num_with_mean_B} / {len(valid_fieldlines)}")
