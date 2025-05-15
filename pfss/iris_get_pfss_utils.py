@@ -328,7 +328,7 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     plt.show() # Checks the distribution of field strengths among selected seeds.
 
     # Convert the masked strong-field pixel positions (masked_pix_x, masked_pix_y) into real-world solar coordinates (longitude, latitude).
-    seeds = m_hmi_resample.pixel_to_world(masked_pix_x*u.pix, masked_pix_y*u.pix,).make_3d()
+    seeds = m_hmi_resample.pixel_to_world(masked_pix_x*u.pix, masked_pix_y*u.pix,).make_3d() #.make_3d() converts the 2D pixel coordinates to 3D spherical coords.
 
     plt.figure(figsize=(8,6))
     plt.scatter(seeds.lon.to(u.deg), seeds.lat.to(u.deg), s=1, c='r')
@@ -386,27 +386,27 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     max_steps = int(np.ceil(10 * nrho / ds)) # .ceil rounds to the nearest integer, this computes a maximum number of steps that guarantees a fieldline can reach the top (2.5 R☉) or bottom (1 R☉) without runnin g out of steps.
     tracer = pfsspy.tracing.FortranTracer(step_size=ds, max_steps=max_steps) # Initialize a tracer to follow magnetic fieldlines step-by-step through the solved PFSS field.
     print('processing fieldlines')
-    fieldlines = tracer.trace(SkyCoord(seeds), pfss_output) # .trace takes list of seed starting points, takes magentic field solution, tracing the fieldlines starting at each seed point.
+    fieldlines = tracer.trace(SkyCoord(seeds), pfss_output) # .trace takes list of seed starting points, takes magentic field solution, tracing the fieldlines starting at each seed point. Still spherical coords.
     # Fieldline reaches the source surface (2.5) = open fieldline. Fieldline reaches the solar surface (1) = closed fieldline. The fieldline hits max_steps and is forcibly stopped.
-    for f in fieldlines:
-        try:
-            #f.b = pfss_output.get_bvec(f.coords, out_type="cartesian") #Error: Unitless
-            f.b = pfss_output.get_bvec(f.coords, out_type="cartesian") * u.G # * u.G converts the unitless output to the correct units.
-        except Exception as e:
-            f.b = None
+    
+    #for f in fieldlines:
+    #    try:
+    #        f.b = pfss_output.get_bvec(f.coords, out_type="cartesian") * u.G # * u.G converts the unitless output to the correct units.
+    #    except Exception as e:
+    #        f.b = None
 
-    all_magnitudes = []
-    for f in fieldlines:
-        if hasattr(f, 'b') and f.b is not None:
-            mags = np.linalg.norm(f.b.value, axis=1)
-            mags = mags[np.isfinite(mags)]
-            all_magnitudes.extend(mags)
+    #all_magnitudes = []
+    #for f in fieldlines:
+    #    if hasattr(f, 'b') and f.b is not None:
+    #        mags = np.linalg.norm(f.b.value, axis=1)
+    #        mags = mags[np.isfinite(mags)]
+    #        all_magnitudes.extend(mags)
 
 
-    if all_magnitudes:
-        all_magnitudes = np.array(all_magnitudes)
-        print(f"B magnitude range: {all_magnitudes.min():.2f} G – {all_magnitudes.max():.2f} G")
-        print(f"B mean: {np.mean(all_magnitudes):.2f} G, median: {np.median(all_magnitudes):.2f} G")
+    #if all_magnitudes:
+    #    all_magnitudes = np.array(all_magnitudes)
+    #    print(f"B magnitude range: {all_magnitudes.min():.2f} G – {all_magnitudes.max():.2f} G")
+    #    print(f"B mean: {np.mean(all_magnitudes):.2f} G, median: {np.median(all_magnitudes):.2f} G")
 
     ## DEBUG BLOCK — Check radii
     #first_fline = fieldlines[0]
@@ -526,21 +526,48 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
             point_diff = [dx, dy, dz] # This creates a list of the differences in x, y, z.
             points_diff.append(point_diff) # This adds the point_diff to the list of points_diff.
 
+        total_length = 0
         for i in range(len(points_diff)):
             points_diff_x_squared = points_diff[i][0] ** 2 # This grabs the x coord of the current point_diff, and squarses it.
             points_diff_y_squared = points_diff[i][1] ** 2 
             points_diff_z_squared = points_diff[i][2] ** 2 
-            point_abs = np.sqrt(points_diff_x_squared + points_diff_y_squared + points_diff_z_squared)
-            total_length += point_abs # This adds the absolute value of the point_diff to the total length of the fieldline.
+            point_mag = np.sqrt(points_diff_x_squared + points_diff_y_squared + points_diff_z_squared)
+            total_length += point_mag # This adds the absolute value of the point_diff to the total length of the fieldline.
         f.length = total_length
-        
-        # Mean magnetic field strength metadata
-        if hasattr(f, 'b') and f.b is not None: # Check if the fieldline has magnetic field data.
-            B_magnitude = np.linalg.norm(f.b.value, axis=1) # f.b.to(u.Gauss) converts units from Tesla to Gauss, .value strips away the units, np.linalg.norm() computes the vector magnitude.
-            f.mean_B = np.mean(B_magnitude) # Take the average of all |B| values along the fieldline.
-        else:
-            f.mean_B = np.nan
 
+        ## Mean magnetic field strength metadata
+        #if hasattr(f, 'b') and f.b is not None: # Check if the fieldline has magnetic field data.
+        #    B_magnitude = np.linalg.norm(f.b.value, axis=1) # f.b.to(u.Gauss) converts units from Tesla to Gauss, .value strips away the units, np.linalg.norm() computes the vector magnitude.
+        #    f.mean_B = np.mean(B_magnitude) # Take the average of all |B| values along the fieldline.
+        #else:
+        #    f.mean_B = np.nan
+        
+    # we no longer need to make use of a try block since we already check for valid_fieldlines, so all fieldlines should have valid data.
+    for f in valid_fieldlines:
+        ## pfss_output is the output of psspy.pfss()
+        ## get_bvec() tells pfsspy to calcualte the magnetic field vector at the coordinates of the fieldline f.
+        ## out_type="cartesian" means we get the output in cartesian coords, isntead of spherical.
+        #bvec = pfss_output.get_bvec(f.coords, out_type="cartesian") * u.G
+        #f.b = bvec # does nothing.
+        ## np.linalg.norm calculates the length(magnitude) of the vector bvec, which is the magnetic field vector in this case.
+        ## axis=1 means operate within rows (across columns).
+        ## .value removes the units
+        ## .mean gets the average of all the values.
+        #f.mean_B = np.mean(np.linalg.norm(bvec.value, axis=1))
+
+        coords = f.coords # f.coords is a list of 3D coordinate points along the fieldline f.
+        bvec_unitless = pfss_output.get_bvec(coords, out_type="cartesian") # This gets the magnetic field vector at the coordinates of the fieldline f.
+        bvec = bvec_unitless * u.G # This converts the units from Tesla to Gauss.
+
+        bvec_mag = []
+        for i in range(len(bvec)):
+            bvec_x = bvec[i][0].value # This grabs the x coord of the magnetic field vector.
+            bvec_y = bvec[i][1].value 
+            bvec_z = bvec[i][2].value 
+            mag = np.sqrt(bvec_x ** 2 + bvec_y ** 2 + bvec_z ** 2) # This calculates the magnitude of the magnetic field vector.
+            bvec_mag.append(mag)
+        bvec_mean = np.mean(bvec_mag) # This takes the average of all |B| values along the fieldline.
+        f.mean_b = bvec_mean # This adds the mean magnetic field strength to the fieldline object.
 
     num_with_mean_B = sum(np.isfinite(f.mean_B) for f in valid_fieldlines)
     print(f"Fieldlines with valid mean_B metadata: {num_with_mean_B} / {len(valid_fieldlines)}")
