@@ -512,7 +512,7 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
         x = coords.x.value # .value removes the units so it is compatible with numpy, creating a float.
         y = coords.y.value
         z = coords.z.value
-        print("Number of points along fieldline:", len(x))
+        #print("Number of points along fieldline:", len(x))
 
         points = []
         for i in range(len(x)):
@@ -556,6 +556,9 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
         #f.mean_B = np.mean(np.linalg.norm(bvec.value, axis=1))
 
         coords = f.coords # f.coords is a list of 3D coordinate points along the fieldline f.
+        if len(coords) == 0:
+            f.mean_b = np.nan
+            continue
         bvec_unitless = pfss_output.get_bvec(coords, out_type="cartesian") # This gets the magnetic field vector at the coordinates of the fieldline f.
         bvec = bvec_unitless * u.G # This converts the units from Tesla to Gauss.
 
