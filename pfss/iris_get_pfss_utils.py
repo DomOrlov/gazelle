@@ -557,7 +557,7 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
 
         coords = f.coords # f.coords is a list of 3D coordinate points along the fieldline f.
         if len(coords) == 0:
-            f.mean_b = np.nan
+            f.mean_B = np.nan
             continue
         bvec_unitless = pfss_output.get_bvec(coords, out_type="cartesian") # This gets the magnetic field vector at the coordinates of the fieldline f.
         bvec = bvec_unitless * u.G # This converts the units from Tesla to Gauss.
@@ -570,7 +570,7 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
             mag = np.sqrt(bvec_x ** 2 + bvec_y ** 2 + bvec_z ** 2) # This calculates the magnitude of the magnetic field vector.
             bvec_mag.append(mag)
         bvec_mean = np.mean(bvec_mag) # This takes the average of all |B| values along the fieldline.
-        f.mean_b = bvec_mean # This adds the mean magnetic field strength to the fieldline object.
+        f.mean_B = bvec_mean # This adds the mean magnetic field strength to the fieldline object.
 
     num_with_mean_B = sum(np.isfinite(f.mean_B) for f in valid_fieldlines)
     print(f"Fieldlines with valid mean_B metadata: {num_with_mean_B} / {len(valid_fieldlines)}")
