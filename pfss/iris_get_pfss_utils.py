@@ -388,7 +388,9 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     print('processing fieldlines')
     fieldlines = tracer.trace(SkyCoord(seeds), pfss_output) # .trace takes list of seed starting points, takes magentic field solution, tracing the fieldlines starting at each seed point. Still spherical coords.
     # Fieldline reaches the source surface (2.5) = open fieldline. Fieldline reaches the solar surface (1) = closed fieldline. The fieldline hits max_steps and is forcibly stopped.
-    
+    empty_coords_count = sum(len(f.coords) == 0 for f in fieldlines)
+    print(f"Fieldlines with empty coords: {empty_coords_count} / {len(fieldlines)}")
+
     #for f in fieldlines:
     #    try:
     #        f.b = pfss_output.get_bvec(f.coords, out_type="cartesian") * u.G # * u.G converts the unitless output to the correct units.
