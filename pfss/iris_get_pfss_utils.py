@@ -562,8 +562,23 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
             f.mean_B = np.nan
             print(f"Skipping fieldline with no coordinates: {f}")
             continue
-        bvec_unitless = pfss_output.get_bvec(coords, out_type="cartesian") # This gets the magnetic field vector at the coordinates of the fieldline f.
-        bvec = bvec_unitless * u.G # This converts the units from Tesla to Gauss.
+        #bvec_unitless = pfss_output.get_bvec(coords, out_type="cartesian") # This gets the magnetic field vector at the coordinates of the fieldline f.
+        #bvec = bvec_unitless * u.G # This converts the units from Tesla to Gauss.
+        coords.representation_type = "spherical"
+        phi = coords.lon.to("rad").value
+        sin_theta = np.sin(coords.lat).value
+        log_r = np.log(coords.radius.to(u.R_sun).value)
+        N = len(phi)
+        interp_input = np.zeros((N, 3))  # create empty (N, 3) array.
+        for i in range(N):
+            interp_input[i, 0] = phi[i]         # φ (longitude, in radians)
+            interp_input[i, 1] = sin_theta[i]   # sin(θ)
+            interp_input[i, 2] = log_r[i]       # log(r)
+        bvec_unitless = pfss_output._brgi(interp_input)
+        unit_str = pfss_output.input_map.meta.get("bunit", None)
+        bunit = u.Unit(unit_str) if unit_str is not None else u.dimensionless_unscaled # In our case the bunit is unitless.
+        bvec = bvec_unitless * bunit
+        bvec = bvec * u.G # This converts the units from Tesla to Gauss (works because we know bunit in this case is unitless, but we useanyway to stay consistent with the original function).
 
         bvec_mag = []
         for i in range(len(bvec)):
@@ -574,8 +589,7 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
             bvec_mag.append(mag)
         bvec_mean = np.mean(bvec_mag) # This takes the average of all |B| values along the fieldline.
         f.mean_B = bvec_mean # This adds the mean magnetic field strength to the fieldline object.
-
-
+    
     num_with_length = sum(np.isfinite(f.length) for f in valid_fieldlines)
     print(f"Fieldlines with valid length metadata: {num_with_length} / {len(valid_fieldlines)}")
 
