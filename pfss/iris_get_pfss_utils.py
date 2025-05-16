@@ -558,6 +558,7 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
         coords = f.coords # f.coords is a list of 3D coordinate points along the fieldline f.
         if len(coords) == 0:
             f.mean_B = np.nan
+            print(f"Skipping fieldline with no coordinates: {f}")
             continue
         bvec_unitless = pfss_output.get_bvec(coords, out_type="cartesian") # This gets the magnetic field vector at the coordinates of the fieldline f.
         bvec = bvec_unitless * u.G # This converts the units from Tesla to Gauss.
@@ -571,6 +572,10 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
             bvec_mag.append(mag)
         bvec_mean = np.mean(bvec_mag) # This takes the average of all |B| values along the fieldline.
         f.mean_B = bvec_mean # This adds the mean magnetic field strength to the fieldline object.
+
+
+    num_with_length = sum(np.isfinite(f.length) for f in valid_fieldlines)
+    print(f"Fieldlines with valid length metadata: {num_with_length} / {len(valid_fieldlines)}")
 
     num_with_mean_B = sum(np.isfinite(f.mean_B) for f in valid_fieldlines)
     print(f"Fieldlines with valid mean_B metadata: {num_with_mean_B} / {len(valid_fieldlines)}")
@@ -609,8 +614,8 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     print(f"Total field lines: {len(fieldlines)}")
     print(f"Open field lines: {len(open_fieldlines)}")
     print(f"Closed field lines: {len(closed_fieldlines)}")
-    print("Frame of seeds_2d:", seeds_2d.frame)
-    print("EIS map frame:", map.coordinate_frame)
+    #print("Frame of seeds_2d:", seeds_2d.frame)
+    #print("EIS map frame:", map.coordinate_frame)
     return open_fieldlines, closed_fieldlines
 
 
