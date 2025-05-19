@@ -575,8 +575,13 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
             interp_input[i, 1] = sin_theta[i]   # sin(θ)
             interp_input[i, 2] = log_r[i]       # log(r)
         bvec_unitless = pfss_output._brgi(interp_input)
-        if np.isnan(bvec_unitless).any():
-            print(f"NaNs found in B-field vector for fieldline: {f}")
+        # DEBUG BLOCK
+        nan_mask = np.isnan(bvec_unitless).any(axis=1)  # True if any component (Bx, By, Bz) is NaN
+        num_nans = np.sum(nan_mask)
+        num_valid = len(nan_mask) - num_nans
+        if num_nans > 0:
+            print(f"NaNs in B-field vector for fieldline {f}: {num_nans} NaNs out of {len(nan_mask)} points ({num_valid} valid)")
+        # END DEBUG BLOCK
         unit_str = pfss_output.input_map.meta.get("bunit", None)
         bunit = u.Unit(unit_str) if unit_str is not None else u.dimensionless_unscaled # In our case the bunit is unitless.
         bvec = bvec_unitless * bunit
