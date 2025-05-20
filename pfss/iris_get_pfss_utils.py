@@ -569,10 +569,13 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
         radii = coords.radius.to(u.R_sun).value
         valid_mask = radii <= 2.5
         coords = coords[valid_mask]
-        coords.representation_type = "spherical" # Makes sure the coord representation is in spherical form.
-        phi = coords.lon.to("rad").value # Extracts the longitude of the coords in radians.
-        sin_theta = np.sin(coords.lat).value # Extracts the sine of the latitude of the coords.
-        log_r = np.log(coords.radius.to(u.R_sun).value) # Extracts the log of the radius of the coords in solar radii.
+        #phi = coords.lon.to("rad").value # Extracts the longitude of the coords in radians.
+        #sin_theta = np.sin(coords.lat).value # Extracts the sine of the latitude of the coords.
+        #log_r = np.log(coords.radius.to(u.R_sun).value) # Extracts the log of the radius of the coords in solar radii.
+        # Apply mask directly to the arrays you use for interpolation:
+        phi = coords.lon.to("rad").value[valid_mask]
+        sin_theta = np.sin(coords.lat).value[valid_mask]
+        log_r = np.log(radii[valid_mask])
         N = len(phi)
         interp_input = np.zeros((N, 3))  # create empty (N, 3) array.
         for i in range(N):
