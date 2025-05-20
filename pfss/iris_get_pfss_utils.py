@@ -601,7 +601,7 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
         ## DEBUG BLOCK # I was right the last value is Nan, I assume because it's something like 2.50001.
         if np.any(np.isnan(bvec_mag)):
             print(f"\n=== DEBUG: NaNs found in bvec_mag for fieldline {f} ===")
-            print("bvec_unitless:\n", bvec_unitless)  # raw interpolated unitless vectors
+            print("bvec_unitless[-100:]:\n", bvec_unitless[-100:])  # raw interpolated unitless vectors
         #    print("bvec (with units):\n", bvec)        # vectors with unit applied
         #    print("bvec_mag:\n", bvec_mag)             # computed magnitudes
         #    print("bvec_mean (will be NaN):", np.mean(bvec_mag))
