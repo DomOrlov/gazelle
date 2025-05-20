@@ -547,7 +547,7 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
     # we no longer need to make use of a try block since we already check for valid_fieldlines, so all fieldlines should have valid data.
     for f in valid_fieldlines:
         ## pfss_output is the output of psspy.pfss()
-        ## get_bvec() tells pfsspy to calcualte the magnetic field vector at the coordinates of the fieldline f.
+        ## get_bvec() tells pfsspy to calcualte the magnetic field vector at the coords of the fieldline f.
         ## out_type="cartesian" means we get the output in cartesian coords, isntead of spherical.
         #bvec = pfss_output.get_bvec(f.coords, out_type="cartesian") * u.G
         #f.b = bvec # does nothing.
@@ -557,35 +557,35 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
         ## .mean gets the average of all the values.
         #f.mean_B = np.mean(np.linalg.norm(bvec.value, axis=1))
 
-        coords = f.coords # f.coords is a list of 3D coordinate points along the fieldline f.
-        if len(coords) == 0:
+        coords = f.coords # f.coords is a list of 3D coord points along the fieldline f.
+        if len(coords) == 0: # Skip fieldlines with no coords.
             f.mean_B = np.nan
-            print(f"Skipping fieldline with no coordinates: {f}")
+            #print(f"Skipping fieldline with no coordinates: {f}")
             continue
-        #bvec_unitless = pfss_output.get_bvec(coords, out_type="cartesian") # This gets the magnetic field vector at the coordinates of the fieldline f.
+        #bvec_unitless = pfss_output.get_bvec(coords, out_type="cartesian") # This gets the magnetic field vector at the coords of the fieldline f.
         #bvec = bvec_unitless * u.G # This converts the units from Tesla to Gauss.
-        coords.representation_type = "spherical"
-        phi = coords.lon.to("rad").value
-        sin_theta = np.sin(coords.lat).value
-        log_r = np.log(coords.radius.to(u.R_sun).value)
+        coords.representation_type = "spherical" # Makes sure the coord representation is in spherical form.
+        phi = coords.lon.to("rad").value # Extracts the longitude of the coords in radians.
+        sin_theta = np.sin(coords.lat).value # Extracts the sine of the latitude of the coords.
+        log_r = np.log(coords.radius.to(u.R_sun).value) # Extracts the log of the radius of the coords in solar radii.
         N = len(phi)
         interp_input = np.zeros((N, 3))  # create empty (N, 3) array.
         for i in range(N):
             interp_input[i, 0] = phi[i]         # φ (longitude, in radians)
             interp_input[i, 1] = sin_theta[i]   # sin(θ)
             interp_input[i, 2] = log_r[i]       # log(r)
-        bvec_unitless = pfss_output._brgi(interp_input)
-        # DEBUG BLOCK
-        nan_mask = np.isnan(bvec_unitless).any(axis=1)  # True if any component (Bx, By, Bz) is NaN
-        num_nans = np.sum(nan_mask)
-        num_valid = len(nan_mask) - num_nans
-        if num_nans > 0:
-            print(f"NaNs in B-field vector for fieldline {f}: {num_nans} NaNs out of {len(nan_mask)} points ({num_valid} valid)")
-        # END DEBUG BLOCK
-        unit_str = pfss_output.input_map.meta.get("bunit", None)
+        bvec_unitless = pfss_output._brgi(interp_input) # Use PFSSPy's internal interpolator _brgi to get the B-vector at each coord point.
+        ## DEBUG BLOCK
+        #nan_mask = np.isnan(bvec_unitless).any(axis=1)  # True if any component (Bx, By, Bz) is NaN
+        #num_nans = np.sum(nan_mask)
+        #num_valid = len(nan_mask) - num_nans
+        #if num_nans > 0:
+        #    print(f"NaNs in B-field vector for fieldline {f}: {num_nans} NaNs out of {len(nan_mask)} points ({num_valid} valid)")
+        ## END DEBUG BLOCK
+        unit_str = pfss_output.input_map.meta.get("bunit", None) # Attempt to get the unit string from the metadata of the input map.
         bunit = u.Unit(unit_str) if unit_str is not None else u.dimensionless_unscaled # In our case the bunit is unitless.
         bvec = bvec_unitless * bunit
-        bvec = bvec * u.G # This converts the units from Tesla to Gauss (works because we know bunit in this case is unitless, but we useanyway to stay consistent with the original function).
+        bvec = bvec * u.G # This converts the units from Tesla to Gauss (works because we know bunit in this case is unitless, but we use anyway to stay consistent with the original function).
 
         bvec_mag = []
         for i in range(len(bvec)):
@@ -594,7 +594,16 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
             bvec_z = bvec[i][2].value 
             mag = np.sqrt(bvec_x ** 2 + bvec_y ** 2 + bvec_z ** 2) # This calculates the magnitude of the magnetic field vector.
             bvec_mag.append(mag)
-        bvec_mean = np.mean(bvec_mag) # This takes the average of all |B| values along the fieldline.
+        # DEBUG BLOCK
+        if np.any(np.isnan(bvec_mag)):
+            print(f"\n=== DEBUG: NaNs found in bvec_mag for fieldline {f} ===")
+            print("bvec_unitless:\n", bvec_unitless)  # raw interpolated unitless vectors
+            print("bvec (with units):\n", bvec)        # vectors with unit applied
+            print("bvec_mag:\n", bvec_mag)             # computed magnitudes
+            print("bvec_mean (will be NaN):", np.mean(bvec_mag))
+            break  # Stop after first one to inspect it
+        # END DEBUG BLOCK
+        bvec_mean = np.mean(bvec_mag) # This takes the average of all |B| values along the fieldline. If any value is NaN, the mean will be NaN.
         f.mean_B = bvec_mean # This adds the mean magnetic field strength to the fieldline object.
     
     num_with_length = sum(np.isfinite(f.length) for f in valid_fieldlines)
