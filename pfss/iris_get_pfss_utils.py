@@ -565,10 +565,6 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
         #bvec_unitless = pfss_output.get_bvec(coords, out_type="cartesian") # This gets the magnetic field vector at the coords of the fieldline f.
         #bvec = bvec_unitless * u.G # This converts the units from Tesla to Gauss.
         coords.representation_type = "spherical" # Makes sure the coord representation is in spherical form.
-        # Clip to PFSS domain
-        radii = coords.radius.to(u.R_sun).value
-        valid_mask = radii < 2.49999999
-        coords = coords[valid_mask]
         print("Max radius after filtering:", np.max(coords.radius.to(u.R_sun).value))
         phi = coords.lon.to("rad").value # Extracts the longitude of the coords in radians.
         sin_theta = np.sin(coords.lat).value # Extracts the sine of the latitude of the coords.
@@ -599,12 +595,12 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
             mag = np.sqrt(bvec_x ** 2 + bvec_y ** 2 + bvec_z ** 2) # This calculates the magnitude of the magnetic field vector.
             bvec_mag.append(mag)
         ## DEBUG BLOCK # I was right the last value is Nan, I assume because it's something like 2.50001.
-        if np.any(np.isnan(bvec_mag)):
-            print("bvec_unitless[-100:]:\n", bvec_unitless[-100:])  # raw interpolated unitless vectors
-        #    print("bvec (with units):\n", bvec)        # vectors with unit applied
-        #    print("bvec_mag:\n", bvec_mag)             # computed magnitudes
-        #    print("bvec_mean (will be NaN):", np.mean(bvec_mag))
-            break  # Stop after first one to inspect it
+        #if np.any(np.isnan(bvec_mag)):
+        #    print("bvec_unitless[-100:]:\n", bvec_unitless[-100:])  # raw interpolated unitless vectors
+        ##    print("bvec (with units):\n", bvec)        # vectors with unit applied
+        ##    print("bvec_mag:\n", bvec_mag)             # computed magnitudes
+        ##    print("bvec_mean (will be NaN):", np.mean(bvec_mag))
+        #    break  # Stop after first one to inspect it
         ## END DEBUG BLOCK
         #bvec_mean = np.mean(bvec_mag) # This takes the average of all |B| values along the fieldline. If any value is NaN, the mean will be NaN.
         bvec_mean = np.nanmean(bvec_mag) # This takes the average of all |B| values along the fieldline, ignoring NaN values.
