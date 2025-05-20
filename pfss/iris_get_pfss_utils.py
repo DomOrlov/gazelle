@@ -565,7 +565,7 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
         #bvec_unitless = pfss_output.get_bvec(coords, out_type="cartesian") # This gets the magnetic field vector at the coords of the fieldline f.
         #bvec = bvec_unitless * u.G # This converts the units from Tesla to Gauss.
         coords.representation_type = "spherical" # Makes sure the coord representation is in spherical form.
-        print("Max radius after filtering:", np.max(coords.radius.to(u.R_sun).value))
+        #print("Max radius after filtering:", np.max(coords.radius.to(u.R_sun).value))
         phi = coords.lon.to("rad").value # Extracts the longitude of the coords in radians.
         sin_theta = np.sin(coords.lat).value # Extracts the sine of the latitude of the coords.
         log_r = np.log(coords.radius.to(u.R_sun).value) # Extracts the log of the radius of the coords in solar radii.
