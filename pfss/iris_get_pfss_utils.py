@@ -564,6 +564,7 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
             continue
         #bvec_unitless = pfss_output.get_bvec(coords, out_type="cartesian") # This gets the magnetic field vector at the coords of the fieldline f.
         #bvec = bvec_unitless * u.G # This converts the units from Tesla to Gauss.
+        coords.representation_type = "spherical" # Makes sure the coord representation is in spherical form.
         # Clip to PFSS domain
         radii = coords.radius.to(u.R_sun).value
         valid_mask = radii <= 2.5
