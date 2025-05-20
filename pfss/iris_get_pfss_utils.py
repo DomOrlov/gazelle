@@ -586,7 +586,11 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
         bunit = u.Unit(unit_str) if unit_str is not None else u.dimensionless_unscaled # In our case the bunit is unitless.
         bvec = bvec_unitless * bunit
         bvec = bvec * u.G # This converts the units from Tesla to Gauss (works because we know bunit in this case is unitless, but we use anyway to stay consistent with the original function).
-
+        # DEBUG BLOCK
+        radii = coords.radius.to(u.R_sun).value
+        if radii[-1] > 2.5:
+            print(f"Closed fieldline ending at r = {radii[-1]:.5f} R☉ → likely overshot")
+        # END DEBUG BLOCK
         bvec_mag = []
         for i in range(len(bvec)):
             bvec_x = bvec[i][0].value # This grabs the x coord of the magnetic field vector.
@@ -594,16 +598,17 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
             bvec_z = bvec[i][2].value 
             mag = np.sqrt(bvec_x ** 2 + bvec_y ** 2 + bvec_z ** 2) # This calculates the magnitude of the magnetic field vector.
             bvec_mag.append(mag)
-        # DEBUG BLOCK
-        if np.any(np.isnan(bvec_mag)):
-            print(f"\n=== DEBUG: NaNs found in bvec_mag for fieldline {f} ===")
-            print("bvec_unitless:\n", bvec_unitless)  # raw interpolated unitless vectors
-            print("bvec (with units):\n", bvec)        # vectors with unit applied
-            print("bvec_mag:\n", bvec_mag)             # computed magnitudes
-            print("bvec_mean (will be NaN):", np.mean(bvec_mag))
-            break  # Stop after first one to inspect it
-        # END DEBUG BLOCK
-        bvec_mean = np.mean(bvec_mag) # This takes the average of all |B| values along the fieldline. If any value is NaN, the mean will be NaN.
+        ## DEBUG BLOCK # I was right the last value is Nan, I assume because it's something like 2.50001.
+        #if np.any(np.isnan(bvec_mag)):
+        #    print(f"\n=== DEBUG: NaNs found in bvec_mag for fieldline {f} ===")
+        #    print("bvec_unitless:\n", bvec_unitless)  # raw interpolated unitless vectors
+        #    print("bvec (with units):\n", bvec)        # vectors with unit applied
+        #    print("bvec_mag:\n", bvec_mag)             # computed magnitudes
+        #    print("bvec_mean (will be NaN):", np.mean(bvec_mag))
+        #    break  # Stop after first one to inspect it
+        ## END DEBUG BLOCK
+        #bvec_mean = np.mean(bvec_mag) # This takes the average of all |B| values along the fieldline. If any value is NaN, the mean will be NaN.
+        bvec_mean = np.nanmean(bvec_mag) # This takes the average of all |B| values along the fieldline, ignoring NaN values.
         f.mean_B = bvec_mean # This adds the mean magnetic field strength to the fieldline object.
     
     num_with_length = sum(np.isfinite(f.length) for f in valid_fieldlines)
