@@ -646,6 +646,8 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
             f_expansion = (B0 / B1) * (r1 / r0)**2
         else:
             f_expansion = np.nan
+        if not hasattr(f, "custom"):
+            f.custom = {}
         f.custom["expansion_factor"] = f_expansion # Not a predefined attribute in pfsspy, but we can add it as a custom attribute. 
 
     
