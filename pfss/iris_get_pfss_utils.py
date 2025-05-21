@@ -607,7 +607,7 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
         f.mean_B = bvec_mean # This adds the mean magnetic field strength to the fieldline object.
 
 
-        # Expansion factor 
+        # Expansion factor : a measure of how much the magnetic field expands from the solar surface to the source surface.
         # First thing we need to do is find out r0 and B0, which are the values at the footpoint of the fieldline (1 R☉).
         r_values = coords.radius.to(u.R_sun).value # Extract the radius for each point along the fieldline.
         smallest_diff = float('inf')  # Start with a huge difference.
@@ -646,8 +646,7 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
             f_expansion = (B0 / B1) * (r1 / r0)**2
         else:
             f_expansion = np.nan
-
-        f.expansion_factor = f_expansion
+        f.custom["expansion_factor"] = f_expansion # Not a predefined attribute in pfsspy, but we can add it as a custom attribute. 
 
     
     num_with_length = sum(np.isfinite(f.length) for f in valid_fieldlines)
