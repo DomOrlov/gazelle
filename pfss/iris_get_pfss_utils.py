@@ -605,12 +605,59 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
         #bvec_mean = np.mean(bvec_mag) # This takes the average of all |B| values along the fieldline. If any value is NaN, the mean will be NaN.
         bvec_mean = np.nanmean(bvec_mag) # This takes the average of all |B| values along the fieldline, ignoring NaN values.
         f.mean_B = bvec_mean # This adds the mean magnetic field strength to the fieldline object.
+
+
+        # Expansion factor 
+        # First thing we need to do is find out r0 and B0, which are the values at the footpoint of the fieldline (1 R☉).
+        r_values = coords.radius.to(u.R_sun).value # Extract the radius for each point along the fieldline.
+        smallest_diff = float('inf')  # Start with a huge difference.
+        r_closest_to_1 = None
+        B_at_r_closest_to_1 = None
+        r_at_r_closest_to_1 = None
+        for i in range(len(r_values)):
+            r_curr = r_values[i]
+            B_curr = bvec_mag[i]
+            diff_from_1 = abs(r_curr - 1.0) # This calculates the difference between the current radius and 1.0.
+            if diff_from_1 < smallest_diff: # This checks if the current difference is smaller than the smallest difference.
+                smallest_diff = diff_from_1
+                r_closest_to_1 = r_curr
+                B_at_r_closest_to_1 = B_curr
+                r_at_r_closest_to_1 = r_curr
+        B0 = B_at_r_closest_to_1 
+        r0 = r_at_r_closest_to_1
+
+        # Next we need to find out r1 and B1, which are the values at the source surface (2.5 R☉).
+        r_target = 2.5
+        smallest_diff = float('inf')
+        r_closest_to_2_5 = None
+        B_at_r_closest_to_2_5 = None
+        for i in range(len(r_values)):
+            r_curr = r_values[i]
+            B_curr = bvec_mag[i]
+            diff_from_2_5 = abs(r_curr - r_target)
+            if diff_from_2_5 < smallest_diff: # This checks if the current difference is smaller than the smallest difference.
+                smallest_diff = diff_from_2_5
+                r_closest_to_2_5 = r_curr
+                B_at_r_closest_to_2_5 = B_curr
+        B1 = B_at_r_closest_to_2_5
+        r1 = r_closest_to_2_5
+
+        if B1 > 0 and r0 > 0 and r1 > 0:
+            f_expansion = (B0 / B1) * (r1 / r0)**2
+        else:
+            f_expansion = np.nan
+
+        f.expansion_factor = f_expansion
+
     
     num_with_length = sum(np.isfinite(f.length) for f in valid_fieldlines)
     print(f"Fieldlines with valid length metadata: {num_with_length} / {len(valid_fieldlines)}")
 
     num_with_mean_B = sum(np.isfinite(f.mean_B) for f in valid_fieldlines)
     print(f"Fieldlines with valid mean_B metadata: {num_with_mean_B} / {len(valid_fieldlines)}")
+
+    num_with_expansion_factor = sum(np.isfinite(f.expansion_factor) for f in valid_fieldlines)
+    print(f"Fieldlines with valid expansion factor metadata: {num_with_expansion_factor} / {len(valid_fieldlines)}")
 
     # Plot to verify that start_pix aligns with EIS data.
     plt.figure(figsize=(6, 10))
