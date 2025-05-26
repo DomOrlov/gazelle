@@ -611,8 +611,8 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
             f.custom = {}
 
         f.custom["expansion_factor"] = f.expansion_factor if f.expansion_factor is not None else np.nan # This adds the expansion factor to the fieldline object, if it exists. If the expansion factor is None, set it to NaN.
-        print(f"Expansion factor: {f.expansion_factor}")
-        print(f"Custom stored expansion factor: {f.custom['expansion_factor']}")
+        #print(f"Expansion factor: {f.expansion_factor}")
+        #print(f"Custom stored expansion factor: {f.custom['expansion_factor']}")
 
         ## Expansion factor : a measure of how much the magnetic field expands from the solar surface to the source surface.
         ## First thing we need to do is find out r0 and B0, which are the values at the footpoint of the fieldline (1 R☉).
