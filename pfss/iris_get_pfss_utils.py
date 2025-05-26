@@ -607,6 +607,9 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
         f.mean_B = bvec_mean # This adds the mean magnetic field strength to the fieldline object.
 
         #f.custom["expansion_factor"] = f.expansion_factor # This adds the expansion factor to the fieldline object, if it exists.
+        if not hasattr(f, "custom"):
+            f.custom = {}
+
         f.custom["expansion_factor"] = f.expansion_factor if f.expansion_factor is not None else np.nan # This adds the expansion factor to the fieldline object, if it exists. If the expansion factor is None, set it to NaN.
         print(f"Expansion factor: {f.expansion_factor}")
         print(f"Custom stored expansion factor: {f.custom['expansion_factor']}")
