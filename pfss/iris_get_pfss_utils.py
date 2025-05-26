@@ -606,49 +606,53 @@ def get_pfss_from_map(map, min_gauss = -20, max_gauss = 20, dimension = (1080, 5
         bvec_mean = np.nanmean(bvec_mag) # This takes the average of all |B| values along the fieldline, ignoring NaN values.
         f.mean_B = bvec_mean # This adds the mean magnetic field strength to the fieldline object.
 
+        #f.custom["expansion_factor"] = f.expansion_factor # This adds the expansion factor to the fieldline object, if it exists.
+        f.custom["expansion_factor"] = f.expansion_factor if f.expansion_factor is not None else np.nan # This adds the expansion factor to the fieldline object, if it exists. If the expansion factor is None, set it to NaN.
+        print(f"Expansion factor: {f.expansion_factor}")
+        print(f"Custom stored expansion factor: {f.custom['expansion_factor']}")
 
-        # Expansion factor : a measure of how much the magnetic field expands from the solar surface to the source surface.
-        # First thing we need to do is find out r0 and B0, which are the values at the footpoint of the fieldline (1 R☉).
-        r_values = coords.radius.to(u.R_sun).value # Extract the radius for each point along the fieldline.
-        smallest_diff = float('inf')  # Start with a huge difference.
-        r_closest_to_1 = None
-        B_at_r_closest_to_1 = None
-        r_at_r_closest_to_1 = None
-        for i in range(len(r_values)):
-            r_curr = r_values[i]
-            B_curr = bvec_mag[i]
-            diff_from_1 = abs(r_curr - 1.0) # This calculates the difference between the current radius and 1.0.
-            if diff_from_1 < smallest_diff: # This checks if the current difference is smaller than the smallest difference.
-                smallest_diff = diff_from_1
-                r_closest_to_1 = r_curr
-                B_at_r_closest_to_1 = B_curr
-                r_at_r_closest_to_1 = r_curr
-        B0 = B_at_r_closest_to_1 
-        r0 = r_at_r_closest_to_1
+        ## Expansion factor : a measure of how much the magnetic field expands from the solar surface to the source surface.
+        ## First thing we need to do is find out r0 and B0, which are the values at the footpoint of the fieldline (1 R☉).
+        #r_values = coords.radius.to(u.R_sun).value # Extract the radius for each point along the fieldline.
+        #smallest_diff = float('inf')  # Start with a huge difference.
+        #r_closest_to_1 = None
+        #B_at_r_closest_to_1 = None
+        #r_at_r_closest_to_1 = None
+        #for i in range(len(r_values)):
+        #    r_curr = r_values[i]
+        #    B_curr = bvec_mag[i]
+        #    diff_from_1 = abs(r_curr - 1.0) # This calculates the difference between the current radius and 1.0.
+        #    if diff_from_1 < smallest_diff: # This checks if the current difference is smaller than the smallest difference.
+        #        smallest_diff = diff_from_1
+        #        r_closest_to_1 = r_curr
+        #        B_at_r_closest_to_1 = B_curr
+        #        r_at_r_closest_to_1 = r_curr
+        #B0 = B_at_r_closest_to_1 
+        #r0 = r_at_r_closest_to_1
 
-        # Next we need to find out r1 and B1, which are the values at the source surface (2.5 R☉).
-        r_target = 2.5
-        smallest_diff = float('inf')
-        r_closest_to_2_5 = None
-        B_at_r_closest_to_2_5 = None
-        for i in range(len(r_values)):
-            r_curr = r_values[i]
-            B_curr = bvec_mag[i]
-            diff_from_2_5 = abs(r_curr - r_target)
-            if diff_from_2_5 < smallest_diff: # This checks if the current difference is smaller than the smallest difference.
-                smallest_diff = diff_from_2_5
-                r_closest_to_2_5 = r_curr
-                B_at_r_closest_to_2_5 = B_curr
-        B1 = B_at_r_closest_to_2_5
-        r1 = r_closest_to_2_5
+        ## Next we need to find out r1 and B1, which are the values at the source surface (2.5 R☉).
+        #r_target = 2.5
+        #smallest_diff = float('inf')
+        #r_closest_to_2_5 = None
+        #B_at_r_closest_to_2_5 = None
+        #for i in range(len(r_values)):
+        #    r_curr = r_values[i]
+        #    B_curr = bvec_mag[i]
+        #    diff_from_2_5 = abs(r_curr - r_target)
+        #    if diff_from_2_5 < smallest_diff: # This checks if the current difference is smaller than the smallest difference.
+        #        smallest_diff = diff_from_2_5
+        #        r_closest_to_2_5 = r_curr
+        #        B_at_r_closest_to_2_5 = B_curr
+        #B1 = B_at_r_closest_to_2_5
+        #r1 = r_closest_to_2_5
 
-        if B1 > 0 and r0 > 0 and r1 > 0:
-            f_expansion = (B0 / B1) * (r1 / r0)**2
-        else:
-            f_expansion = np.nan
-        if not hasattr(f, "custom"):
-            f.custom = {}
-        f.custom["expansion_factor"] = f_expansion # Not a predefined attribute in pfsspy, but we can add it as a custom attribute. 
+        #if B1 > 0 and r0 > 0 and r1 > 0:
+        #    f_expansion = (B0 / B1) * (r1 / r0)**2
+        #else:
+        #    f_expansion = np.nan
+        #if not hasattr(f, "custom"):
+        #    f.custom = {}
+        #f.custom["expansion_factor"] = f_expansion # Not a predefined attribute in pfsspy, but we can add it as a custom attribute. 
 
     
     num_with_length = sum(np.isfinite(f.length) for f in valid_fieldlines)
