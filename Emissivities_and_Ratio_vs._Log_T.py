@@ -16,6 +16,30 @@ high_fip_elements = {"ar", "he", "o", "s"}
 
 spectral_lines = {}
 
+title = {
+    "CaAr": "Ca XIV 193.87 Å / Ar XIV 194.40 Å",
+    "FeS": "Fe XVI 262.98 Å / S XIII 256.69 Å",
+    "SiS": "Si X 258.37 Å / S X 264.23 Å",
+    "SAr": "S XI 188.68 Å / Ar XI 188.81 Å"
+}
+
+pair_to_element = {
+    ("ca_14", "ar_14"): "CaAr",
+    ("fe_16", "s_13"): "FeS",
+    ("si_10", "s_10"): "SiS",
+    ("s_11", "ar_11"): "SAr"
+}
+
+plt.rcParams.update({
+    "font.size": 10,
+    "axes.labelsize": 10,
+    "xtick.labelsize": 10,
+    "ytick.labelsize": 10,
+    "legend.fontsize": 10,
+    "legend.labelspacing": 0.4,
+    "axes.titlesize": 10
+})
+
 # Extract Fe ions and wavelengths from filenames
 for filename in template_files:
     parts = filename.replace("__", "_").split("_")
@@ -45,7 +69,9 @@ test_mode = True  # Set to False after testing
 if test_mode == True:
     matched_pairs = [
         ("ca_14", 193.87, "ar_14", 194.40),
-        ("fe_16", 262.98, "s_13", 256.69)
+        ("fe_16", 262.98, "s_13", 256.69),
+        ("si_10", 258.37, "s_10", 264.23),
+        ("s_11", 188.68, "ar_11", 188.81)
     ]
 
 else:
@@ -249,10 +275,13 @@ def plot_emissivity_ratios(emissivity_data, logT):
     plt.ioff()  # Turn off interactive mode for better script-based plotting
     unique_pairs = set((key[:4] for key in emissivity_data.keys()))  # Get unique element pairs
     for (low_ion, low_wvl, high_ion, high_wvl) in unique_pairs:
+        #plt.title(f"{low_ion.replace('_', ' ')} {low_wvl} & {high_ion.replace('_', ' ')} {high_wvl} emissivities and ratio vs. log T")
+        element_key = pair_to_element.get((low_ion, high_ion), f"{low_ion}_{high_ion}")
+        low_label, high_label = title[element_key].split(" / ")
         fig, ax = plt.subplots(figsize=(8, 6))  # Single figure per ion pair
         ax.set_yscale('log')
         ax.set_xlabel('Log T (K)')
-        ax.set_ylabel('Emissivity and Emissivity Ratio')
+        ax.set_ylabel('Emissivity and emissivity ratio')
         ax.set_xlim(6.0, 7.2)  # **Updated to match the good plot**
         ax.set_ylim(0.1, 10)  # **Updated to match the good plot**
         ax.set_yticks([1e-2, 1e-1, 1e0, 1e1])
@@ -271,8 +300,10 @@ def plot_emissivity_ratios(emissivity_data, logT):
             else:
                 print(f"Warning: No valid emissivity data for {low_ion} {low_wvl}Å / {high_ion} {high_wvl}Å at ne={ne}")
                 error_log.append(f"Warning: No valid emissivity data for {low_ion} {low_wvl}Å / {high_ion} {high_wvl}Å at ne={ne}")
-            ax.plot(logT, low_emiss_norm, 'k-', label=f'{low_ion.upper()} {low_wvl}Å at 1e9')
-            ax.plot(logT, high_emiss_norm, 'k--', label=f'{high_ion.upper()} {high_wvl}Å at 1e9')
+            #ax.plot(logT, low_emiss_norm, 'k-', label=f'{low_ion.upper()} {low_wvl}Å at 1e9')
+            #ax.plot(logT, high_emiss_norm, 'k--', label=f'{high_ion.upper()} {high_wvl}Å at 1e9')
+            ax.plot(logT, low_emiss_norm, 'k-', label=f'{low_label} at 1e9')
+            ax.plot(logT, high_emiss_norm, 'k--', label=f'{high_label} at 1e9')
         # Plot ratios at different densities
         for ne, color, linestyle in zip([1e8, 1e9, 1e10], colors_ratio, [':', '--', '-.']):
             key = (low_ion, low_wvl, high_ion, high_wvl, ne)
@@ -283,14 +314,15 @@ def plot_emissivity_ratios(emissivity_data, logT):
                 ratio = np.full_like(low_emiss, np.nan)  # Initialize with NaN values
                 valid_ratio_indices = (high_emiss > 1e-30)  # Only compute ratio where high_emiss is significant
                 ratio[valid_ratio_indices] = low_emiss[valid_ratio_indices] / high_emiss[valid_ratio_indices]
-                ax.plot(logT, ratio, color=color, linestyle=linestyle, label=f'{low_ion.upper()} / {high_ion.upper()} at {int(ne):.0e}')
+                #ax.plot(logT, ratio, color=color, linestyle=linestyle, label=f'{low_ion.upper()} / {high_ion.upper()} at {int(ne):.0e}')
+                ax.plot(logT, ratio, color=color, linestyle=linestyle, label=f'{low_label} / {high_label} at {int(ne):.0e}')
         ax.axhline(1.0, color='gray', linewidth=1)
         ax.legend(loc='best')
-        plt.title(f"{low_ion.replace('_', ' ')} {low_wvl} & {high_ion.replace('_', ' ')} {high_wvl} Emissivities and Ratio vs. Log T")
-        filename = f"{low_ion.replace('_', ' ')} {low_wvl} & {high_ion.replace('_', ' ')} {high_wvl} Emissivities and Ratio vs. Log T".title()
+        plt.title(f"{title[element_key]} emissivities and ratio vs log T")
+        filename = f"{low_ion.replace('_', ' ')} {low_wvl} & {high_ion.replace('_', ' ')} {high_wvl} emissivities and ratio vs. log T".title()
         filename = filename.replace(" ", "_").replace(".", "_") + ".png"        
         plt.savefig(filename, dpi=300)
-        plt.show(block=True)  # **Ensures plot stays visible**
+        plt.show(block=True)  
         plt.close(fig)
         print(f"Saved: {filename}")
 
