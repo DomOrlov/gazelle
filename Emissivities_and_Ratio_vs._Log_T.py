@@ -3,6 +3,12 @@ import os
 import re
 import ChiantiPy.core as ch  # type: ignore
 import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
+import matplotlib
+import matplotlib.cm as cm
+from datetime import datetime
+
 
 template_dir = "/home/ug/orlovsd2/eispac/eispac/data/templates"
 
@@ -262,10 +268,7 @@ for key, (low_emiss, high_emiss) in emissivity_data.items():
 #now we finally plot the data
 
 
-import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
-import matplotlib
-import matplotlib.cm as cm
+
 
 colors_ratio = ['purple', 'green', 'yellow']  # Colors for the ratio curves
 colors_non_ratio = 'black'  # Black for normal emissivity curves
@@ -326,7 +329,6 @@ def plot_emissivity_ratios(emissivity_data, logT):
         plt.close(fig)
         print(f"Saved: {filename}")
 
-from datetime import datetime
 # Define log file path (modify the folder as needed)
 log_folder = "/home/ug/orlovsd2/gazelle"  # Change this to your desired directory
 os.makedirs(log_folder, exist_ok=True)  # Ensure the folder exists
