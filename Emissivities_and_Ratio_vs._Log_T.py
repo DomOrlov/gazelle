@@ -281,6 +281,9 @@ def plot_emissivity_ratios(emissivity_data, logT):
         #plt.title(f"{low_ion.replace('_', ' ')} {low_wvl} & {high_ion.replace('_', ' ')} {high_wvl} emissivities and ratio vs. log T")
         element_key = pair_to_element.get((low_ion, high_ion), f"{low_ion}_{high_ion}")
         low_label, high_label = title[element_key].split(" / ")
+        # Strip wavelength (keep only ion name, e.g., "S XI")
+        low_label = " ".join(low_label.split()[:2])
+        high_label = " ".join(high_label.split()[:2])
         fig, ax = plt.subplots(figsize=(8, 6))  # Single figure per ion pair
         ax.set_yscale('log')
         ax.set_xlabel('Log T (K)')
