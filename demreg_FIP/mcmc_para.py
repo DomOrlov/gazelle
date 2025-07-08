@@ -17,6 +17,68 @@ import os
 #adding error logging
 from log_config import error_log
 
+'''
+This script processes EIS (EUV Imaging Spectrometer) observations to create Differential Emission Measure (DEM) maps and elemental composition maps.
+
+DEM:
+- The DEM is a measure of the amount of plasma at different temperatures in the solar corona.
+- It is recovered by solving an ill-posed inverse problem using regularized inversion (demregpy).
+
+Why not pure MCMC:
+- True MCMC is slow and computationally heavy.
+- The DEM is solved using a regularized inversion method (demregpy) which is faster and more efficient.
+
+Main Purpose:
+- Solve the DEM for every pixel in an EIS raster using demregpy (regularized inversion).
+- The DEM describes how much plasma is present at each temperature for each pixel.
+- Different spectral lines (Fe, S, Ca, Ar) emit only at specific temperature ranges (via G(T)).
+- By integrating G(T) . DEM(T) over temperature, we predict how bright each line should be if abundances were standard.
+- This removes the temperature/density dependence of line brightness and isolates the abundance effect.
+- Then, compare the observed brightness to the predicted brightness for certain lines:
+    - If the predicted intensity of the high-FIP line is lower than observed, high-FIP abundance is higher than expected.
+    - If the low-FIP line intensity is higher than expected, low-FIP element is enhanced.
+- These differences are captured as FIP bias (elemental composition maps).
+
+Workflow Overview:
+1. Download the EIS data file if not already present (using eispac).
+2. Read EIS spectral line intensity and error maps (ashmcmc).
+   - Loads the selected spectral lines and their corresponding intensity and uncertainty maps.
+   - Reads the density map (needed later for emissivity corrections).
+   - Prepares data structures for later per-pixel DEM inversion.
+3. For each x-pixel:
+    - Loop over all y-pixels in that x-column.
+    - For each (x,y) pixel:
+        - Select useful emission lines.
+        - Retrieve emissivity functions (G(T)) for those lines at the pixel's density.
+        - Set up the temperature grid dynamically based on the lines used (adaptive temperature range).
+        - Solve the Differential Emission Measure (DEM) inversion using regularized least-squares (demregpy).
+        - Store:
+            - The reconstructed DEM(T) profile (amount of plasma vs temperature).
+            - The chi² value.
+            - The list of lines actually used in the fit.
+    - After finishing the full column (all y-pixels at a fixed x):
+        - Save the results into a temporary file in `dem_columns/`. This minimizes RAM usage and allows parallel column processing.
+4. After all columns are processed:
+    - Load all the saved per-x-column .npz files from `dem_columns/`.
+    - Assemble them into a full 3D DEM cube:
+        - 1st axis = Y-pixel (vertical position)
+        - 2nd axis = X-pixel (horizontal position)
+        - 3rd axis = Temperature bins (logT grid)
+    - Also build:
+        - A 2D map of chi² values.
+        - A 2D map of number of lines used per pixel.
+    - Save the full DEM cube and auxiliary maps into a single `.npz` file (*_dem_combined.npz`).
+5. For each specified composition ratio (e.g., Si/S, S/Ar, Ca/Ar, Fe/S):
+    - Predict the low-FIP line intensity by integrating emissivity DEM over temperature.
+    - Rescale the DEM slightly to match the observed low-FIP line intensity (compensating for calibration drifts).
+    - Predict the high-FIP line intensity similarly using the scaled DEM.
+    - Calculate the composition ratio:
+        - Ratio = Predicted High-FIP Line / Observed High-FIP Line
+    - Assemble the composition map over the full raster.
+    - Save outputs:
+        - .fits map of the FIP bias ratio (and png).
+'''
+
 
 def check_dem_exists(filename: str) -> bool:
     # Check if the DEM file exists
@@ -53,6 +115,7 @@ def process_pixel(args: tuple[int, np.ndarray, np.ndarray, list[str], np.ndarray
             mcmc_int_error = []
             mcmc_emis_sorted = []
             # Original parameters
+            # Full default logT grid: 4.0 to 8.01 in 0.04 steps
             original_dlogt = 0.04
             original_mint = 4 - original_dlogt/2
             original_maxt = 8.01 + original_dlogt/2
@@ -76,7 +139,7 @@ def process_pixel(args: tuple[int, np.ndarray, np.ndarray, list[str], np.ndarray
                 mint = max(mint, 4.0)
                 maxt = min(maxt, 8.01)
                 
-                temps=10**np.arange(mint,maxt,dlogt)
+                temps=10**np.arange(mint,maxt,dlogt) # Temperture grid you want to solve
 
                 start_index = np.searchsorted(original_temps, temps[0])
                 end_index = np.searchsorted(original_temps, temps[-1], side='right')
@@ -179,13 +242,21 @@ def combine_dem_files(xdim:int, ydim:int, dir: str, delete=False) -> np.array:
     lines_used = np.zeros((ydim,xdim))
     logt = np.load(dem_files[0])['logt']
 
-    for dem_file in tqdm(dem_files):
+    for file_num, dem_file in enumerate(tqdm(dem_files)): # Goes through all column files, file_num is the column number, dem_file is the file name
         # print(dem_file)
-        xpix_loc = search(r'dem_(\d+)\.npz$', dem_file).group(1)
+        xpix_loc = search(r'dem_(\d+)\.npz$', dem_file).group(1) # Extract the X-pixel index from filename
         # print(xpix_loc)
-        dem_combined[:,int(xpix_loc), :] = np.load(dem_file)['dem_results'] 
+        dem_combined[:,int(xpix_loc), :] = np.load(dem_file)['dem_results'] # Loads the column's DEM result (shape: [Y, T]) and inserts it into the correct X position.
         chi2_combined[:,int(xpix_loc)] = np.load(dem_file)['chi2'] 
-        lines_used[:,int(xpix_loc)] = np.array([len(line) for line in np.load(dem_file, allow_pickle=True)['lines_used']])
+        lines_used[:,int(xpix_loc)] = np.array([len(line) for line in np.load(dem_file, allow_pickle=True)['lines_used']]) #Loads the list of spectral lines used per pixel in that column.
+
+        # Collect full line name list per pixel
+        if file_num == 0:
+            lines_used_names = np.empty((ydim, xdim), dtype=object)
+
+        line_list_column = np.load(dem_file, allow_pickle=True)['lines_used'] # Save the line names used at each pixel.
+        for ypix in range(len(line_list_column)):
+            lines_used_names[ypix, int(xpix_loc)] = line_list_column[ypix]
 
     directory_to_delete = os.path.join(dir, 'dem_columns')
     if os.path.exists(directory_to_delete):
@@ -194,22 +265,29 @@ def combine_dem_files(xdim:int, ydim:int, dir: str, delete=False) -> np.array:
     else:
         print(f'Directory {directory_to_delete} does not exist.')
 
-    return dem_combined, chi2_combined, lines_used, logt
+    return dem_combined, chi2_combined, lines_used, logt, lines_used_names
 
-def demreg_process_wrapper(mcmc_intensity, mcmc_int_error, mcmc_emis_sorted, logt_interp, temps) -> float:
+def demreg_process_wrapper(mcmc_intensity, mcmc_int_error, mcmc_emis_sorted, logt_interp, temps) -> float: # solves how much plasma is present at each temperature
     max_iter = 1000
     l_emd = False
     reg_tweak = 1
     rgt_fact = 2
-    dn_in=np.array(mcmc_intensity)
-    edn_in=np.array(mcmc_int_error)
+    dn_in=np.array(mcmc_intensity) # The observed line intensities
+    edn_in=np.array(mcmc_int_error) # The error bars for each of those intensities.
     tresp_logt = logt_interp
     # set up our target dem temps
     nt = len(mcmc_emis_sorted[0])
     nf = len(mcmc_emis_sorted) 
-    trmatrix = np.zeros((nt,nf))
-    trmatrix = np.array(mcmc_emis_sorted).T
-    dem1,edem1,elogt1,chisq1,dn_reg1=dn2dem(dn_in,edn_in,trmatrix,tresp_logt,temps,max_iter=1000,l_emd=True,emd_int=True,gloci=1,reg_tweak=0.001,rgt_fact=1.05)
+    trmatrix = np.zeros((nt,nf)) # Creates empty matrix 
+    trmatrix = np.array(mcmc_emis_sorted).T # Emissivity, how bright that line is per unit plasma at that temperature.
+    dem1,edem1,elogt1,chisq1,dn_reg1=dn2dem(dn_in,edn_in,trmatrix,tresp_logt,temps,max_iter=1000,l_emd=True,emd_int=True,gloci=1,reg_tweak=0.001,rgt_fact=1.05) # core demreg function, takes observed intensities and errors, emisitivity fucntions, tempature grid
+    # max_iter=1000 is how many iterations the solver can do. 
+    # l_emd=True is our zeroth order constraint, controls how smooth the dem is.
+    # emd_int=true is our positivity constraint, forces ≥ 0 at every bin.
+    # gloci=1 EM_loci(T) = I_obs / G(T): how much plasma would be needed at each T to produce the observed line intensity. 
+    # i.e computes EM loci curves, uses their minimum as initial guess for DEM(T), prevents starting at 0, which would take longer.
+    # reg_tweak=0.001 tries hard to match the data.
+    # rgt_fact=1.05 how agressively λ is adapted. In each iteration, λ can increase up to 5% if needed to improve stability.
 
     # dem1,edem1,elogt1,chisq1,dn_reg1=dn2dem(dn_in,edn_in,trmatrix,tresp_logt,temps,max_iter=1000,l_emd=True,emd_int=True,gloci=1,reg_tweak=0.3,rgt_fact=1.01)
     return dem1,edem1,elogt1,chisq1,dn_reg1
@@ -236,8 +314,13 @@ def process_data(filename: str, num_processes: int) -> None:
 
     # Combine the DEM files into a single array
     print('------------------------------Combining DEM files------------------------------')
-    dem_combined, chi2_combined, lines_used, logt = combine_dem_files(Intensity.shape[1], Intensity.shape[0], a.outdir, delete=True)
-    np.savez(f'{a.outdir}/{a.outdir.split("/")[-1]}_dem_combined.npz', dem_combined=dem_combined, chi2_combined=chi2_combined, lines_used=lines_used, logt=logt)
+    dem_combined, chi2_combined, lines_used, logt, lines_used_names = combine_dem_files(Intensity.shape[1], Intensity.shape[0], a.outdir, delete=True)
+    np.savez(f'{a.outdir}/{a.outdir.split("/")[-1]}_dem_combined.npz',
+         dem_combined=dem_combined,
+         chi2_combined=chi2_combined,
+         lines_used=lines_used,
+         lines_used_names=lines_used_names,
+         logt=logt)
     
     return f'{a.outdir}/{a.outdir.split("/")[-1]}_dem_combined.npz', a.outdir
 
