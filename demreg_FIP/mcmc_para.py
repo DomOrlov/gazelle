@@ -256,7 +256,12 @@ def combine_dem_files(xdim:int, ydim:int, dir: str, delete=False) -> np.array:
 
         line_list_column = np.load(dem_file, allow_pickle=True)['lines_used'] # Save the line names used at each pixel.
         for ypix in range(len(line_list_column)):
-            lines_used_names[ypix, int(xpix_loc)] = line_list_column[ypix]
+            line_list = line_list_column[ypix]
+            if line_list and isinstance(line_list, list) and len(line_list) > 0:
+                lines_used_names[ypix, int(xpix_loc)] = line_list
+            else:
+                # Mark as empty explicitly
+                lines_used_names[ypix, int(xpix_loc)] = None
 
     directory_to_delete = os.path.join(dir, 'dem_columns')
     if os.path.exists(directory_to_delete):
@@ -360,11 +365,15 @@ def correct_metadata(map, ratio_name):
     return map
 
 def calc_composition_parallel(args):
-    ypix, xpix, ldens, dem_median, intensities, line_databases, comp_ratio, a = args
+    ypix, xpix, ldens, dem_median, intensities, line_databases, comp_ratio, a, lines_used_names = args
+    if lines_used_names[ypix, xpix] is None:
+        return ypix, xpix, np.nan
     logt, emis, linenames = a.read_emissivity(ldens[ypix, xpix])
     logt_interp = interp_emis_temp(logt.value)
     emis_sorted = a.emis_filter(emis, linenames, line_databases[comp_ratio][:2])
     int_lf = pred_intensity_compact(emis_sorted[0], logt_interp, dem_median[ypix, xpix])
+    if int_lf == 0 or intensities[ypix, xpix, 1] == 0:
+        return ypix, xpix, np.nan
     dem_scaled = dem_median[ypix, xpix] * (intensities[ypix, xpix, 0] / int_lf)
     int_hf = pred_intensity_compact(emis_sorted[1], logt_interp, dem_scaled)
     fip_ratio = int_hf / intensities[ypix, xpix, 1]
@@ -388,8 +397,9 @@ def calc_composition(filename, np_file, line_databases, num_processes):
 
     a = ashmcmc(filename, ncpu=num_processes)
     ldens = a.read_density()
-    dem_data = np.load(np_file)
+    dem_data = np.load(np_file, allow_pickle=True)
     dem_median = dem_data['dem_combined']
+    lines_used_names = dem_data['lines_used_names']
 
     for comp_ratio in line_databases:
         try:
@@ -403,8 +413,9 @@ def calc_composition(filename, np_file, line_databases, num_processes):
                 intensities[:, :, num] = map.data
 
             # Create argument list for parallel processing
-            args_list = [(ypix, xpix, ldens, dem_median, intensities, line_databases, comp_ratio, a)
+            args_list = [(ypix, xpix, ldens, dem_median, intensities, line_databases, comp_ratio, a, lines_used_names)
                         for ypix, xpix in np.ndindex(ldens.shape)]
+
 
             # Create a pool of worker processes
             with Pool(processes=num_processes) as pool:
