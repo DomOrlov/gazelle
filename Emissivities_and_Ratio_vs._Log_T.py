@@ -8,6 +8,8 @@ import matplotlib.ticker as ticker
 import matplotlib
 import matplotlib.cm as cm
 from datetime import datetime
+from matplotlib import gridspec
+
 
 
 template_dir = "/home/ug/orlovsd2/eispac/eispac/data/templates"
@@ -37,13 +39,13 @@ pair_to_element = {
 }
 
 plt.rcParams.update({
-    "font.size": 10,
-    "axes.labelsize": 10,
-    "xtick.labelsize": 10,
-    "ytick.labelsize": 10,
-    "legend.fontsize": 10,
+    "font.size": 16,
+    "axes.labelsize": 16,
+    "xtick.labelsize": 16,
+    "ytick.labelsize": 16,
+    "legend.fontsize": 16,
     "legend.labelspacing": 0.4,
-    "axes.titlesize": 10
+    "axes.titlesize": 16
 })
 
 # Extract Fe ions and wavelengths from filenames
@@ -276,23 +278,30 @@ matplotlib.use('Agg')  # Change this to 'TkAgg' if needed, or 'Agg' for saving o
 
 def plot_emissivity_ratios(emissivity_data, logT):
     plt.ioff()  # Turn off interactive mode for better script-based plotting
-    unique_pairs = set((key[:4] for key in emissivity_data.keys()))  # Get unique element pairs
-    for (low_ion, low_wvl, high_ion, high_wvl) in unique_pairs:
+    #unique_pairs = set((key[:4] for key in emissivity_data.keys()))  # Get unique element pairs
+    unique_pairs = list(set((key[:4] for key in emissivity_data.keys())))
+    fig = plt.figure(figsize=(18, 12))
+    fig.suptitle("Emissivities and Ratios vs Log T", fontsize=22, y=0.985)
+    outer_grid = gridspec.GridSpec(2, 2, wspace=0.25, hspace=0.35)
+    for idx, (low_ion, low_wvl, high_ion, high_wvl) in enumerate(unique_pairs):
+        ax = fig.add_subplot(outer_grid[idx])
         #plt.title(f"{low_ion.replace('_', ' ')} {low_wvl} & {high_ion.replace('_', ' ')} {high_wvl} emissivities and ratio vs. log T")
         element_key = pair_to_element.get((low_ion, high_ion), f"{low_ion}_{high_ion}")
         low_label, high_label = title[element_key].split(" / ")
         # Strip wavelength (keep only ion name, e.g., "S XI")
         low_label = " ".join(low_label.split()[:2])
         high_label = " ".join(high_label.split()[:2])
-        fig, ax = plt.subplots(figsize=(8, 6))  # Single figure per ion pair
+        #fig, ax = plt.subplots(figsize=(8, 6))  # Single figure per ion pair
         ax.set_yscale('log')
-        ax.set_xlabel('Log T (K)')
-        ax.set_ylabel('Emissivity and emissivity ratio')
+        ax.set_xlabel('Log T (K)', fontsize=16)
+        ax.set_ylabel('Emissivity and emissivity ratio', fontsize=16)
+        ax.tick_params(axis='both', which='major', labelsize=16)
         #ax.set_xlim(6.0, 7.2)  # **Updated to match the good plot**
         ax.set_xlim(5.8, 7.2)
-        ax.set_ylim(0.1, 10)  # **Updated to match the good plot**
+        ax.set_ylim(0.1, 10)
         ax.set_yticks([1e-2, 1e-1, 1e0, 1e1])
         ax.get_yaxis().set_major_formatter(ticker.ScalarFormatter())
+        ax.get_yaxis().set_minor_formatter(ticker.NullFormatter())
         # Normalize emissivities at ne = 1e9
         ne_ref = 1e9
         key_ref = (low_ion, low_wvl, high_ion, high_wvl, ne_ref)
@@ -325,13 +334,20 @@ def plot_emissivity_ratios(emissivity_data, logT):
                 ax.plot(logT, ratio, color=color, linestyle=linestyle, label=f'{low_label} / {high_label} at {int(ne):.0e}')
         ax.axhline(1.0, color='gray', linewidth=1)
         ax.legend(loc='best')
-        plt.title(f"{title[element_key]} emissivities and ratio vs log T")
-        filename = f"{low_ion.replace('_', ' ')} {low_wvl} & {high_ion.replace('_', ' ')} {high_wvl} emissivities and ratio vs. log T".title()
-        filename = filename.replace(" ", "_").replace(".", "_") + ".png"        
-        plt.savefig(filename, dpi=300)
-        plt.show(block=True)  
-        plt.close(fig)
-        print(f"Saved: {filename}")
+        #plt.title(f"{title[element_key]} emissivities and ratio vs log T")
+        ax.set_title(f"{title[element_key]}", fontsize=16, fontweight='bold')
+        #filename = f"{low_ion.replace('_', ' ')} {low_wvl} & {high_ion.replace('_', ' ')} {high_wvl} emissivities and ratio vs. log T".title()
+        #filename = filename.replace(" ", "_").replace(".", "_") + ".png"        
+        #plt.savefig(filename, dpi=300)
+        #plt.show(block=True)  
+        #plt.close(fig)
+        #print(f"Saved: {filename}")
+
+    fig.tight_layout()
+    fig.subplots_adjust(top=0.91)
+    plt.savefig("combined_emissivity_ratio_grid.png", dpi=300)
+    plt.show()
+
 
 # Define log file path (modify the folder as needed)
 log_folder = "/home/ug/orlovsd2/gazelle"  # Change this to your desired directory
