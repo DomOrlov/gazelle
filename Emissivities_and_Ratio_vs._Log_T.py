@@ -281,7 +281,7 @@ def plot_emissivity_ratios(emissivity_data, logT):
     #unique_pairs = set((key[:4] for key in emissivity_data.keys()))  # Get unique element pairs
     unique_pairs = list(set((key[:4] for key in emissivity_data.keys())))
     fig = plt.figure(figsize=(18, 12))
-    fig.suptitle("Emissivities and Ratios vs Log T", fontsize=22, y=0.985)
+    fig.suptitle("Emissivities and ratios vs log T", fontsize=22, y=0.985)
     outer_grid = gridspec.GridSpec(2, 2, wspace=0.25, hspace=0.35)
     for idx, (low_ion, low_wvl, high_ion, high_wvl) in enumerate(unique_pairs):
         ax = fig.add_subplot(outer_grid[idx])
@@ -294,7 +294,7 @@ def plot_emissivity_ratios(emissivity_data, logT):
         #fig, ax = plt.subplots(figsize=(8, 6))  # Single figure per ion pair
         ax.set_yscale('log')
         ax.set_xlabel('Log T (K)', fontsize=16)
-        ax.set_ylabel('Emissivity and emissivity ratio', fontsize=16)
+        ax.set_ylabel('Emissivities and ratios', fontsize=16)
         ax.tick_params(axis='both', which='major', labelsize=16)
         #ax.set_xlim(6.0, 7.2)  # **Updated to match the good plot**
         ax.set_xlim(5.8, 7.2)
@@ -345,7 +345,7 @@ def plot_emissivity_ratios(emissivity_data, logT):
 
     fig.tight_layout()
     fig.subplots_adjust(top=0.91)
-    plt.savefig("combined_emissivity_ratio_grid.png", dpi=300)
+    plt.savefig("Emissivities_Ratios.png", dpi=300)
     plt.show()
 
 
