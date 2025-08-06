@@ -279,7 +279,21 @@ matplotlib.use('Agg')  # Change this to 'TkAgg' if needed, or 'Agg' for saving o
 def plot_emissivity_ratios(emissivity_data, logT):
     plt.ioff()  # Turn off interactive mode for better script-based plotting
     #unique_pairs = set((key[:4] for key in emissivity_data.keys()))  # Get unique element pairs
-    unique_pairs = list(set((key[:4] for key in emissivity_data.keys())))
+
+
+    #unique_pairs = list(set((key[:4] for key in emissivity_data.keys())))
+    if test_mode:
+        # Fixed order for test mode
+        unique_pairs = [
+            ("ca_14", 193.87, "ar_14", 194.40),
+            ("fe_16", 262.98, "s_13", 256.69),
+            ("si_10", 258.37, "s_10", 264.23),
+            ("s_11", 188.68, "ar_11", 188.81)
+        ]
+    else:
+        # Dynamic discovery order
+        unique_pairs = list(set((key[:4] for key in emissivity_data.keys())))
+
     fig = plt.figure(figsize=(18, 12))
     fig.suptitle("Emissivities and ratios vs log T", fontsize=22, y=0.985)
     outer_grid = gridspec.GridSpec(2, 2, wspace=0.25, hspace=0.35)
