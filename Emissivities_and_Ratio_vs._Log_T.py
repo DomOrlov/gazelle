@@ -359,7 +359,7 @@ def plot_emissivity_ratios(emissivity_data, logT):
 
     fig.tight_layout()
     fig.subplots_adjust(top=0.91)
-    plt.savefig("Emissivities_Ratios.png", dpi=300)
+    plt.savefig("Emissivities_Ratios.png", dpi=150)
     plt.show()
 
 
