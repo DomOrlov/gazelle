@@ -17,12 +17,15 @@ def make_intensity_maps_for_file(filename, line_databases, ncpu=4, test_mode=Fal
     a = ashmcmc(filename, ncpu=ncpu)
     print(f"DEBUG: ashmcmc outdir => {a.outdir}")
 
-    custom_intensity_dir = r"C:\Users\domor\clean_demreg_FIP\intensity_maps"
+    custom_intensity_dir = "intensity_map_test"
 
     if test_mode:
         #line_databases = {"CaAr": ["ca_14_193.87"], "FeS": ["fe_16_262.98"]}
-        line_databases = {"FeS": ["s_13_256.69"]}  # only S XIII 256.69
-
+        #line_databases = {"FeS": ["s_13_256.69"]}  # only S XIII 256.69
+        line_databases = {
+            "CaAr": ["ca_14_193.87", "ar_14_194.40"],  # Ca XIV and Ar XIV
+            "FeS":  ["fe_16_262.98", "s_13_256.69"]    # Fe XVI and S XIII
+        }
 
     for ratio_key, ratio_lines in line_databases.items():
         for line in ratio_lines[:2]:
